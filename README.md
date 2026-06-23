@@ -3051,3 +3051,116 @@ class StudentsViewModel : INotifyPropertyChanged {
         <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
         
         <TextBlock Text="Возраст:"/>
+        <TextBox Text="{Binding Age, UpdateSourceTrigger=PropertyChanged}"/>
+        
+        <TextBlock Text="{Binding Name, StringFormat='Привет, {0}!'}" 
+                   FontSize="16" Margin="0,20,0,0"/>
+        
+        <Button Content="Сохранить" Command="{Binding SaveCommand}"/>
+    </StackPanel>
+</Window>
+```
+
+**ViewModel:**
+```csharp
+class StudentViewModel : INotifyPropertyChanged {
+    public event PropertyChangedEventHandler PropertyChanged;
+    
+    protected void OnPropertyChanged([CallerMemberName] string propertyName = null) {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+    
+    private string _name;
+    public string Name {
+        get => _name;
+        set {
+            _name = value;
+            OnPropertyChanged();
+        }
+    }
+    
+    private int _age;
+    public int Age {
+        get => _age;
+        set {
+            _age = value;
+            OnPropertyChanged();
+        }
+    }
+    
+    // Команда для кнопки
+    public ICommand SaveCommand { get; }
+    
+    public StudentViewModel() {
+        SaveCommand = new RelayCommand(() => {
+            MessageBox.Show($"Сохранено: {Name}, {Age} лет");
+        });
+    }
+}
+```
+
+**Результат:** при вводе текста в `TextBox`, `TextBlock` с приветствием обновляется **мгновенно** благодаря `UpdateSourceTrigger=PropertyChanged` и `INotifyPropertyChanged`.
+
+### Привязка к коллекциям — `ObservableCollection<T>`
+
+Для привязки к спискам используется `ItemsSource`. **Важно:** коллекция должна реализовывать `INotifyCollectionChanged`, чтобы UI обновлялся при добавлении/удалении элементов. Для этого используется `ObservableCollection<T>`.
+
+```xml
+<ListBox ItemsSource="{Binding Students}" 
+         SelectedItem="{Binding SelectedStudent}"
+         DisplayMemberPath="Name"/>
+```
+
+**ViewModel:**
+```csharp
+class StudentsViewModel : INotifyPropertyChanged {
+    public event PropertyChangedEventHandler PropertyChanged;
+    
+    // ObservableCollection уведомляет UI при добавлении/удалении
+    public ObservableCollection<Student> Students { get; set; }
+    
+    private Student _selectedStudent;
+    public Student SelectedStudent {
+        get => _selectedStudent;
+        set {
+            _selectedStudent = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedStudent)));
+        }
+    }
+    
+    public StudentsViewModel() {
+        Students = new ObservableCollection<Student> {
+            new Student { Name = "Анна", Age = 20 },
+            new Student { Name = "Иван", Age = 22 }
+        };
+    }
+    
+    public void AddStudent(Student student) {
+        Students.Add(student);  // UI автоматически обновится!
+    }
+}
+```
+
+**Если использовать обычный `List<T>`** — добавление элементов не обновит UI, пока не переприсвоить `ItemsSource`.
+
+### Сводная таблица Binding
+
+| Компонент | Назначение |
+|-----------|------------|
+| `DataContext` | Устанавливает источник данных для Binding |
+| `INotifyPropertyChanged` | Уведомляет UI об изменении свойств |
+| `ObservableCollection<T>` | Уведомляет UI об изменении коллекции |
+| `Mode` | Направление потока данных (OneWay, TwoWay и т.д.) |
+| `UpdateSourceTrigger` | Когда обновлять источник (PropertyChanged, LostFocus) |
+| `StringFormat` | Форматирование отображаемого значения |
+| `Converter` | Преобразование значения (например, bool → Visibility) |
+
+### Практические советы
+
+**1.** Всегда реализуй `INotifyPropertyChanged` в ViewModel.
+**2.** Используй `ObservableCollection<T>` для коллекций, привязанных к UI.
+**3.** Для `TextBox` ставь `UpdateSourceTrigger=PropertyChanged`, если нужно мгновенное обновление.
+**4.** Для `DataGrid`, `ListBox` — `TwoWay` Binding для `SelectedItem`.
+**5.** Используй `StringFormat` для форматирования без конвертеров.
+
+---
