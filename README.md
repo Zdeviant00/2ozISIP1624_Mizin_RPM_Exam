@@ -1461,3 +1461,1593 @@ foreach (var a in animals) a.Speak();  // всё работает!
 Это реализация принципа **Open/Closed**: система **открыта** для расширения (новые классы) и **закрыта** для модификации (старый код не меняется).
 
 ---
+## 21. Объясните, как иерархия классов позволяет упростить разработку сложных приложений. Приведите пример наследования классов.
+
+**Иерархия классов** — это древовидная структура, где **дочерние классы** наследуют свойства и методы **родительских классов** и могут специализировать или расширять их. Это ключевой механизм **наследования** в ООП.
+
+### Как иерархия упрощает разработку
+
+**1. Переиспользование кода.** Общий код пишется один раз в базовом классе и автоматически доступен всем потомкам.
+
+**2. Модульность.** Каждый класс отвечает за свою часть функциональности. Легче тестировать и поддерживать.
+
+**3. Гибкость.** Можно добавлять новые классы, не изменяя существующий код (принцип **Open/Closed**).
+
+**4. Полиморфизм.** Объекты разных классов могут обрабатывать одни и те же вызовы по-разному через общий интерфейс.
+
+**5. Читаемость.** Логическая структура становится понятной за счёт связей «родитель-потомок».
+
+### Пример иерархии классов
+
+**Задача:** моделируем геометрические фигуры. Все фигуры имеют цвет и могут вычислять площадь, но формула площади разная.
+
+```csharp
+// Базовый (родительский) класс
+class Shape {
+    public string Color { get; set; }
+    
+    // virtual — метод можно переопределить в потомках
+    public virtual double GetArea() {
+        return 0;  // базовая реализация
+    }
+    
+    public void Print() {
+        Console.WriteLine($"Цвет: {Color}, площадь: {GetArea():F2}");
+    }
+}
+
+// Потомок 1 — круг
+class Circle : Shape {
+    public double Radius { get; set; }
+    
+    // override — переопределяем метод родителя
+    public override double GetArea() {
+        return Math.PI * Radius * Radius;
+    }
+}
+
+// Потомок 2 — прямоугольник
+class Rectangle : Shape {
+    public double Width { get; set; }
+    public double Height { get; set; }
+    
+    public override double GetArea() {
+        return Width * Height;
+    }
+}
+
+// Потомок 3 — треугольник
+class Triangle : Shape {
+    public double Base { get; set; }
+    public double Height { get; set; }
+    
+    public override double GetArea() {
+        return 0.5 * Base * Height;
+    }
+}
+```
+
+### Использование иерархии
+
+```csharp
+// Создаём объекты разных типов
+Shape circle = new Circle { Color = "Красный", Radius = 5 };
+Shape rectangle = new Rectangle { Color = "Синий", Width = 4, Height = 6 };
+Shape triangle = new Triangle { Color = "Зелёный", Base = 3, Height = 8 };
+
+// Массив фигур — полиморфизм!
+Shape[] shapes = { circle, rectangle, triangle };
+
+// Один код работает с разными типами
+foreach (Shape shape in shapes) {
+    shape.Print();  // вызывает правильный GetArea() для каждого типа
+}
+// Вывод:
+// Цвет: Красный, площадь: 78.54
+// Цвет: Синий, площадь: 24.00
+// Цвет: Зелёный, площадь: 12.00
+```
+
+### Преимущества этого подхода
+
+**1.** Метод `Print()` написан **один раз** в `Shape`, но работает для всех фигур.
+
+**2.** Чтобы добавить новую фигуру (например, `Square`), достаточно создать новый класс и переопределить `GetArea()`. Старый код **не меняется**.
+
+**3.** Можно писать обобщённые методы:
+```csharp
+void PrintTotalArea(Shape[] shapes) {
+    double total = shapes.Sum(s => s.GetArea());
+    Console.WriteLine($"Общая площадь: {total:F2}");
+}
+```
+
+Этот метод работает с **любыми** фигурами, даже с теми, которые будут добавлены в будущем.
+
+---
+
+## 22. Перечислите и объясните суть модификаторов доступа в C#. Как они связаны с инкапсуляцией?
+
+**Модификаторы доступа** — это ключевые слова, определяющие, **кто может видеть и использовать** класс, метод или поле. Они являются главным инструментом реализации **инкапсуляции** — принципа ООП, скрывающего внутреннюю реализацию и предоставляющего контролируемый доступ через публичный интерфейс.
+
+### Основные модификаторы доступа
+
+**1. `public` (публичный)**
+- **Доступ:** из любого места — любой класс, любая сборка.
+- **Когда использовать:** для публичного API класса (методы, свойства, которые должны быть доступны снаружи).
+```csharp
+public class Student {
+    public string Name { get; set; }  // доступно всем
+    public void Study() { }           // доступно всем
+}
+```
+
+**2. `private` (приватный)**
+- **Доступ:** только внутри того же класса.
+- **Когда использовать:** для скрытия внутренней реализации, защиты данных.
+- **По умолчанию** для членов класса (если модификатор не указан).
+```csharp
+class BankAccount {
+    private decimal _balance;  // никто снаружи не видит
+    
+    public void Deposit(decimal amount) {
+        if (amount > 0) _balance += amount;  // контролируемое изменение
+    }
+}
+```
+
+**3. `protected` (защищённый)**
+- **Доступ:** в классе и всех его **потомках** (наследниках), но не во внешнем коде.
+- **Когда использовать:** для членов, которые нужны дочерним классам, но не должны быть доступны снаружи.
+```csharp
+class Animal {
+    protected int health = 100;  // доступно только наследникам
+    
+    protected void Heal(int amount) {
+        health += amount;
+    }
+}
+
+class Dog : Animal {
+    public void Bark() {
+        health--;  // OK — protected доступно в потомке
+    }
+}
+```
+
+**4. `internal` (внутренний)**
+- **Доступ:** только в пределах **одной сборки** (проекта .exe или .dll).
+- **Когда использовать:** для вспомогательных классов, которые нужны внутри проекта, но не должны быть доступны извне.
+```csharp
+internal class DatabaseHelper {
+    // доступен только в этом проекте
+}
+```
+
+**5. `protected internal`**
+- **Доступ:** в той же сборке **ИЛИ** из потомков в другой сборке.
+- **Когда использовать:** редко, для специфических случаев.
+
+**6. `private protected` (C# 7.2+)**
+- **Доступ:** из потомков, но **только в той же сборке**.
+- **Когда использовать:** очень редко.
+
+### Сводная таблица
+
+| Модификатор | Тот же класс | Потомки | Та же сборка | Другие сборки |
+|-------------|--------------|---------|--------------|---------------|
+| `private` | ✅ | ❌ | ❌ | ❌ |
+| `private protected` | ✅ | ✅ (в той же сборке) | ❌ | ❌ |
+| `internal` | ✅ | ❌ | ✅ | ❌ |
+| `protected` | ✅ | ✅ | ❌ | ❌ |
+| `protected internal` | ✅ | ✅ | ✅ | ✅ (только потомки) |
+| `public` | ✅ | ✅ | ✅ | ✅ |
+
+### Как модификаторы связаны с инкапсуляцией
+
+**Инкапсуляция** — это сокрытие внутренней реализации и предоставление публичного интерфейса. Модификаторы доступа реализуют этот принцип:
+
+**1. Скрытие данных.** Внутренние поля (`private`) защищены от прямого изменения извне.
+```csharp
+class Person {
+    private int _age;  // скрыто
+    
+    public int Age {   // публичный интерфейс
+        get => _age;
+        set {
+            if (value >= 0 && value < 150)  // валидация!
+                _age = value;
+            else
+                throw new ArgumentException("Некорректный возраст");
+        }
+    }
+}
+```
+
+**2. Контроль изменения состояния.** Через `private set` можно запретить изменение свойства снаружи.
+```csharp
+class Student {
+    public string Name { get; set; }          // можно читать и менять
+    public double GPA { get; private set; }   // читать можно, менять — только внутри класса
+}
+```
+
+**3. Защита от неправильного использования.** Внутренние методы (`private`) не могут быть вызваны случайно извне.
+
+**Результат:** класс становится **надёжным** — его состояние нельзя испортить извне, можно менять только через публичные методы с валидацией.
+
+---
+
+## 23. Опишите, как осуществляется подключение и работа с базой данных в C#. Какие основные операции можно выполнять с данными?
+
+**Подключение к базе данных (БД)** в C# осуществляется через **ADO.NET** — набор классов в пространстве имён `System.Data`. Для работы с конкретной СУБД (SQL Server, MySQL, PostgreSQL) нужен соответствующий **провайдер** (NuGet-пакет).
+
+### Основные компоненты ADO.NET
+
+**1. `SqlConnection` (или `MySqlConnection`, `NpgsqlConnection` и т.д.)**
+- Устанавливает соединение с БД.
+- Использует **строку подключения** (connection string) — содержит адрес сервера, имя БД, логин/пароль.
+```csharp
+string connStr = "Server=localhost;Database=School;User Id=sa;Password=123;";
+using (var conn = new SqlConnection(connStr)) {
+    conn.Open();  // открытие соединения
+    // работа с БД...
+}  // автоматическое закрытие при выходе из using
+```
+
+**2. `SqlCommand`**
+- Выполняет SQL-запрос к БД.
+```csharp
+var cmd = new SqlCommand("SELECT * FROM Students", conn);
+```
+
+**3. `SqlDataReader`**
+- Читает данные **построчно** (быстро, только вперёд).
+```csharp
+using (var reader = cmd.ExecuteReader()) {
+    while (reader.Read()) {
+        Console.WriteLine($"{reader["Name"]} — {reader["Age"]}");
+    }
+}
+```
+
+**4. `SqlDataAdapter`**
+- Заполняет `DataTable` или `DataSet` данными из БД (для работы в отключённом режиме).
+
+### Основные операции с данными (CRUD)
+
+**CRUD** — аббревиатура четырёх базовых операций:
+
+**1. Create (создание) — `INSERT`**
+```csharp
+var cmd = new SqlCommand("INSERT INTO Students (Name, Age) VALUES (@name, @age)", conn);
+cmd.Parameters.AddWithValue("@name", "Анна");
+cmd.Parameters.AddWithValue("@age", 20);
+cmd.ExecuteNonQuery();  // возвращает число затронутых строк
+```
+
+**2. Read (чтение) — `SELECT`**
+```csharp
+var cmd = new SqlCommand("SELECT Name, Age FROM Students WHERE Age > @age", conn);
+cmd.Parameters.AddWithValue("@age", 18);
+using (var reader = cmd.ExecuteReader()) {
+    while (reader.Read()) {
+        Console.WriteLine($"{reader["Name"]} — {reader["Age"]}");
+    }
+}
+```
+
+**3. Update (обновление) — `UPDATE`**
+```csharp
+var cmd = new SqlCommand("UPDATE Students SET Age = @age WHERE Name = @name", conn);
+cmd.Parameters.AddWithValue("@age", 21);
+cmd.Parameters.AddWithValue("@name", "Анна");
+cmd.ExecuteNonQuery();
+```
+
+**4. Delete (удаление) — `DELETE`**
+```csharp
+var cmd = new SqlCommand("DELETE FROM Students WHERE Name = @name", conn);
+cmd.Parameters.AddWithValue("@name", "Анна");
+cmd.ExecuteNonQuery();
+```
+
+### Методы выполнения команд
+
+| Метод | Когда использовать | Возвращает |
+|-------|-------------------|------------|
+| `ExecuteReader()` | `SELECT` — чтение нескольких строк | `SqlDataReader` |
+| `ExecuteNonQuery()` | `INSERT`, `UPDATE`, `DELETE` | число затронутых строк |
+| `ExecuteScalar()` | Запрос одного значения (`COUNT`, `MAX`) | первый столбец первой строки |
+
+### Параметризованные запросы (защита от SQL-инъекций!)
+
+**Никогда не конкатенируй** пользовательский ввод в SQL-запрос! Используй параметры:
+```csharp
+// ПЛОХО (уязвимо к SQL-инъекциям):
+var cmd = new SqlCommand($"SELECT * FROM Users WHERE Name = '{input}'", conn);
+
+// ХОРОШО (безопасно):
+var cmd = new SqlCommand("SELECT * FROM Users WHERE Name = @name", conn);
+cmd.Parameters.AddWithValue("@name", input);
+```
+
+### Пример полного цикла работы с БД
+
+```csharp
+string connStr = "Server=localhost;Database=School;Trusted_Connection=True;";
+
+using (var conn = new SqlConnection(connStr)) {
+    conn.Open();
+    
+    // 1. Чтение данных
+    var cmd = new SqlCommand("SELECT Name, Age FROM Students", conn);
+    using (var reader = cmd.ExecuteReader()) {
+        while (reader.Read()) {
+            Console.WriteLine($"{reader["Name"]} — {reader["Age"]}");
+        }
+    }
+    
+    // 2. Добавление записи
+    var insertCmd = new SqlCommand("INSERT INTO Students (Name, Age) VALUES (@name, @age)", conn);
+    insertCmd.Parameters.AddWithValue("@name", "Иван");
+    insertCmd.Parameters.AddWithValue("@age", 22);
+    insertCmd.ExecuteNonQuery();
+}
+```
+
+### Примечание для практики
+На экзамене мы используем **заглушку** вместо реальной БД — данные храним в коллекциях (`List<T>`) или файлах JSON. Но теорию ADO.NET знать обязательно!
+
+---
+
+## 24. Объясните, что такое паттерны проектирования и зачем они нужны. Приведите пример одного паттерна и опишите ситуацию, где он применяется.
+
+**Паттерн проектирования (design pattern)** — это **проверенное, повторно используемое решение** типичной проблемы в разработке программного обеспечения. Это **не готовый код**, а **шаблон подхода** — описание того, как организовать классы и их взаимодействие для решения определённой задачи.
+
+### Зачем нужны паттерны
+
+**1. Ускоряют разработку.** Не нужно изобретать решение заново — используем проверенную схему.
+
+**2. Улучшают читаемость.** Команда понимает логику по стандартным названиям паттернов («тут Singleton», «тут Observer»).
+
+**3. Повышают гибкость и масштабируемость.** Решения учитывают возможные изменения требований.
+
+**4. Снижают количество ошибок.** Паттерны прошли проверку временем и множеством проектов.
+
+**5. Обеспечивают единообразие.** В команде формируется общий «язык» проектирования.
+
+### Три категории паттернов
+
+**1. Порождающие (Creational)** — создание объектов.
+- **Singleton** — один экземпляр класса.
+- **Factory Method** — создание объектов через фабричный метод.
+- **Builder** — пошаговое создание сложного объекта.
+
+**2. Структурные (Structural)** — организация классов и объектов.
+- **Adapter** — адаптация интерфейса одного класса к другому.
+- **Decorator** — динамическое добавление поведения объекту.
+- **Facade** — упрощённый интерфейс к сложной подсистеме.
+
+**3. Поведенческие (Behavioral)** — взаимодействие объектов.
+- **Observer** — подписка на события.
+- **Strategy** — семейство алгоритмов.
+- **Command** — инкапсуляция запроса в объект.
+
+### Пример: Singleton (Одиночка)
+
+**Суть:** гарантирует, что у класса существует **ровно один экземпляр**, и предоставляет **глобальную точку доступа** к нему.
+
+**Когда применяется:**
+- Конфигурация приложения (настройки должны быть доступны из любого места).
+- Пул соединений с БД (чтобы не создавать много соединений).
+- Логгер (один объект для записи логов из всего приложения).
+- Кэш (общее хранилище данных).
+
+**Реализация:**
+```csharp
+class AppSettings {
+    // 1. Приватное статическое поле — хранит единственный экземпляр
+    private static AppSettings _instance;
+    
+    // 2. Публичные свойства — данные, которые хранит Singleton
+    public string Language { get; set; } = "ru";
+    public string Theme { get; set; } = "light";
+    
+    // 3. Приватный конструктор — запрещаем создание через new снаружи
+    private AppSettings() { }
+    
+    // 4. Публичное статическое свойство — точка доступа к экземпляру
+    public static AppSettings Instance {
+        get {
+            if (_instance == null) {
+                _instance = new AppSettings();  // создаётся при первом обращении
+            }
+            return _instance;
+        }
+    }
+}
+
+// Использование:
+AppSettings.Instance.Language = "en";
+Console.WriteLine(AppSettings.Instance.Theme);  // "light"
+
+// В другом месте программы:
+Console.WriteLine(AppSettings.Instance.Language);  // "en" — тот же объект!
+```
+
+**Как это работает:**
+1. Конструктор `private` — нельзя создать объект через `new AppSettings()`.
+2. Единственный способ получить объект — через `AppSettings.Instance`.
+3. При первом обращении создаётся экземпляр, при последующих — возвращается тот же объект.
+
+**Преимущества:**
+- Гарантированно один объект во всём приложении.
+- Глобальная точка доступа.
+- Ленивая инициализация (создаётся только при первом обращении).
+
+### Другие распространённые паттерны
+
+**Factory Method** — создание объектов через фабричный метод, а не напрямую через `new`.
+```csharp
+class ShapeFactory {
+    public static Shape CreateShape(string type) {
+        return type switch {
+            "circle" => new Circle(),
+            "rectangle" => new Rectangle(),
+            _ => throw new ArgumentException("Неизвестный тип")
+        };
+    }
+}
+```
+
+**Observer** — подписка на события (используется в WPF для `INotifyPropertyChanged`).
+```csharp
+class NewsPublisher {
+    public event Action<string> OnNewsPublished;
+    
+    public void Publish(string news) {
+        OnNewsPublished?.Invoke(news);  // уведомляем всех подписчиков
+    }
+}
+```
+
+**MVVM (Model-View-ViewModel)** — архитектурный паттерн для WPF, разделяющий UI и логику.
+
+---
+
+## 25. Объясните, как событийно-управляемая модель программирования упрощает создание интерактивных приложений. Какие компоненты чаще всего используются?
+
+**Событийно-управляемая модель программирования (event-driven programming)** — это парадигма, в которой выполнение программы определяется **событиями** (действиями пользователя, системными сигналами, изменениями данных), а не линейной последовательностью инструкций. Это основа всех интерактивных приложений: WPF, WinForms, веб-приложений, игр.
+
+### Как это работает
+
+**Традиционная (линейная) программа:**
+```csharp
+// Выполняется сверху вниз, шаг за шагом
+Console.Write("Введите имя: ");
+string name = Console.ReadLine();
+Console.WriteLine($"Привет, {name}!");
+// Программа ждёт ввода — всё заблокировано
+```
+
+**Событийно-управляемая программа:**
+```csharp
+// Программа не выполняется последовательно, а РЕАГИРУЕТ на события
+button.Click += (sender, e) => {
+    MessageBox.Show("Кнопка нажата!");
+};
+// Программа продолжает работать, обработчик вызывается только при событии
+```
+
+### Как это упрощает создание интерактивных приложений
+
+**1. Не нужно постоянно проверять состояние.**
+Вместо цикла `while (true) { if (button.Pressed) ... }` система сама вызывает обработчик при нажатии.
+
+**2. Интерфейс не блокируется.**
+Обработчики выполняются только при событиях, остальное время приложение свободно.
+
+**3. Гибкость и модульность.**
+Обработчики можно привязывать и отвязывать динамически, менять поведение без изменения основного кода.
+
+**4. Разделение ответственности.**
+Каждый обработчик решает одну задачу — что делать при конкретном событии.
+
+### Ключевые компоненты событийно-управляемой модели
+
+**1. Событие (Event)**
+- Сигнал, что что-то произошло (клик мыши, нажатие клавиши, изменение данных).
+- Объявляется в классе через ключевое слово `event`.
+```csharp
+class Button {
+    public event EventHandler Click;  // событие клика
+}
+```
+
+**2. Обработчик событий (Handler)**
+- Метод, который вызывается при наступлении события.
+- Должен соответствовать сигнатуре делегата события.
+```csharp
+void OnButtonClick(object sender, EventArgs e) {
+    MessageBox.Show("Кнопка нажата!");
+}
+```
+
+**3. Делегат (Delegate)**
+- Тип, описывающий сигнатуру метода-обработчика (параметры и возвращаемый тип).
+- `EventHandler` — стандартный делегат для событий.
+
+**4. Источник события (генератор)**
+- Объект, который генерирует события (кнопка, текстовое поле, таймер).
+
+**5. Подписка и отписка**
+- `+=` — подписка на событие.
+- `-=` — отписка от события.
+```csharp
+button.Click += OnButtonClick;   // подписка
+button.Click -= OnButtonClick;   // отписка
+```
+
+### Часто используемые компоненты в WPF
+
+**1. `Button.Click`** — нажатие кнопки.
+```csharp
+btnSave.Click += (s, e) => SaveData();
+```
+
+**2. `TextBox.TextChanged`** — изменение текста.
+```csharp
+txtSearch.TextChanged += (s, e) => FilterResults();
+```
+
+**3. `ComboBox.SelectionChanged`** — выбор элемента в выпадающем списке.
+```csharp
+cmbCity.SelectionChanged += (s, e) => LoadDistricts();
+```
+
+**4. `Window.Loaded`** — окно загружено и готово к работе.
+```csharp
+this.Loaded += (s, e) => InitializeData();
+```
+
+**5. `DataGrid.SelectionChanged`** — выбор строки в таблице.
+```csharp
+dataGrid.SelectionChanged += (s, e) => ShowDetails();
+```
+
+**6. `ListBox.SelectionChanged`** — выбор элемента в списке.
+
+**7. `CheckBox.Checked` / `Unchecked`** — установка/снятие флажка.
+
+### Пример полного приложения
+
+```csharp
+public partial class MainWindow : Window {
+    public MainWindow() {
+        InitializeComponent();
+        
+        // Подписка на события при загрузке окна
+        this.Loaded += MainWindow_Loaded;
+        btnSave.Click += BtnSave_Click;
+        txtName.TextChanged += TxtName_TextChanged;
+    }
+    
+    private void MainWindow_Loaded(object sender, RoutedEventArgs e) {
+        // Инициализация данных при загрузке
+        LoadStudents();
+    }
+    
+    private void BtnSave_Click(object sender, RoutedEventArgs e) {
+        // Сохранение при нажатии кнопки
+        SaveData();
+        MessageBox.Show("Сохранено!");
+    }
+    
+    private void TxtName_TextChanged(object sender, TextChangedEventArgs e) {
+        // Фильтрация при изменении текста
+        FilterStudents(txtName.Text);
+    }
+}
+```
+
+### Преимущества событийно-управляемой модели
+
+**1. Отзывчивость.** Интерфейс реагирует на действия пользователя мгновенно.
+
+**2. Модульность.** Каждый обработчик — независимый блок кода.
+
+**3. Масштабируемость.** Легко добавлять новые события и обработчики.
+
+**4. Разделение ответственности.** UI-логика отделена от бизнес-логики (особенно в MVVM).
+
+---
+
+## 26. Опишите, как организуется обработка событий в WPF. Приведите пример обработки нажатия кнопки и объясните механизм работы.
+
+**Обработка событий в WPF** основана на механизме **Routed Events** (маршрутизируемые события) — события, которые могут **распространяться** по дереву визуальных элементов WPF (от родителя к ребёнку или от ребёнка к родителю).
+
+### Как организуется обработка событий
+
+**Способ 1: Объявление в XAML**
+```xml
+<Button Name="btnSave" Content="Сохранить" Click="btnSave_Click" />
+```
+Компилятор автоматически связывает имя метода в XAML с методом в code-behind.
+
+**Способ 2: Подписка в коде (code-behind)**
+```csharp
+// В конструкторе или Loaded:
+btnSave.Click += btnSave_Click;
+
+// Обработчик:
+private void btnSave_Click(object sender, RoutedEventArgs e) {
+    MessageBox.Show("Сохранено!");
+}
+```
+
+**Способ 3: Анонимный метод или лямбда**
+```csharp
+btnSave.Click += (sender, e) => {
+    MessageBox.Show("Сохранено!");
+};
+```
+
+### Пример обработки нажатия кнопки
+
+**XAML:**
+```xml
+<Window x:Class="MyApp.MainWindow">
+    <StackPanel>
+        <Button Name="btnChangeColor" Content="Изменить цвет" Click="btnChangeColor_Click" />
+        <TextBlock Name="txtResult" Text="Привет!" />
+    </StackPanel>
+</Window>
+```
+
+**Code-behind:**
+```csharp
+private void btnChangeColor_Click(object sender, RoutedEventArgs e) {
+    // sender — объект, который сгенерировал событие (сама кнопка)
+    Button clickedButton = sender as Button;
+    
+    // e — аргументы события (RoutedEventArgs)
+    
+    // Изменяем цвет кнопки
+    clickedButton.Background = Brushes.LightGreen;
+    
+    // Изменяем текст
+    txtResult.Text = "Цвет изменён!";
+    
+    MessageBox.Show("Кнопка нажата!");
+}
+```
+
+### Механизм работы: маршрутизация событий (Routing)
+
+В WPF события могут распространяться по дереву элементов тремя способами:
+
+**1. Bubbling (всплытие) — от ребёнка к родителю**
+- Событие начинается на элементе, где произошло действие.
+- Затем «всплывает» к родительским контейнерам.
+- **Пример:** клик на кнопке внутри `StackPanel` внутри `Window`.
+```xml
+<Window>
+    <StackPanel>
+        <Button Content="Кликни" />
+    </StackPanel>
+</Window>
+```
+Порядок обработки `Click`:
+1. `Button` (где произошёл клик)
+2. `StackPanel` (родитель)
+3. `Window` (корневой элемент)
+
+**2. Tunneling (туннелирование) — от родителя к ребёнку**
+- Событие начинается на корневом элементе.
+- Затем «туннелирует» вниз к элементу, где произошло действие.
+- Имена таких событий начинаются с `Preview` (например, `PreviewMouseDown`).
+```csharp
+// Обработчик туннелирования
+private void Window_PreviewMouseDown(object sender, MouseButtonEventArgs e) {
+    // Вызывается ДО того, как событие дойдёт до кнопки
+}
+```
+
+**3. Direct (прямое)**
+- Событие обрабатывается только на том элементе, где произошло.
+- Не распространяется.
+- **Пример:** `ButtonClick` (обычно это bubbling, но некоторые события прямые).
+
+### Остановка распространения события
+
+Чтобы остановить дальнейшее распространение события, установите `e.Handled = true`:
+```csharp
+private void btnChangeColor_Click(object sender, RoutedEventArgs e) {
+    MessageBox.Show("Кнопка нажата!");
+    e.Handled = true;  // событие не пойдёт дальше к родителям
+}
+```
+
+### Параметры обработчика
+
+**`sender`** — объект, который сгенерировал событие.
+```csharp
+Button btn = sender as Button;
+string content = btn.Content.ToString();
+```
+
+**`e` (RoutedEventArgs или производный)** — аргументы события.
+```csharp
+// Для MouseEventArgs:
+double x = e.GetPosition(this).X;
+double y = e.GetPosition(this).Y;
+
+// Для KeyEventArgs:
+Key key = e.Key;
+
+// Для TextChangedEventArgs:
+// e.Changes — информация об изменении текста
+```
+
+### Практический пример: обработка клика с проверкой источника
+
+```csharp
+private void AnyButton_Click(object sender, RoutedEventArgs e) {
+    // Один обработчик для нескольких кнопок
+    Button clickedButton = sender as Button;
+    
+    if (clickedButton.Name == "btnSave") {
+        SaveData();
+    } else if (clickedButton.Name == "btnDelete") {
+        DeleteData();
+    } else if (clickedButton.Name == "btnCancel") {
+        this.Close();
+    }
+}
+```
+
+В XAML:
+```xml
+<Button Name="btnSave" Content="Сохранить" Click="AnyButton_Click" />
+<Button Name="btnDelete" Content="Удалить" Click="AnyButton_Click" />
+<Button Name="btnCancel" Content="Отмена" Click="AnyButton_Click" />
+```
+
+### Преимущества маршрутизируемых событий
+
+**1. Гибкость.** Можно обрабатывать событие на любом уровне дерева элементов.
+
+**2. Повторное использование.** Один обработчик может работать для нескольких элементов.
+
+**3. Контроль.** Можно остановить распространение события (`e.Handled = true`).
+
+**4. Единообразие.** Все события работают по одному механизму.
+
+---
+
+## 27. Какие контейнеры компоновки существуют в WPF? Сравните, в каких ситуациях каждый из них лучше всего подходит?
+
+**Контейнеры компоновки (layout containers)** — это панели WPF, которые определяют **расположение дочерних элементов** на экране. Все они наследуются от абстрактного класса `Panel`. Выбор правильного контейнера критичен для создания удобного и адаптивного интерфейса.
+
+### Основные контейнеры компоновки
+
+**1. `Grid` — сетка с строками и столбцами**
+
+**Принцип:** размещает элементы в невидимой сетке строк и столбцов. Самый **мощный и гибкий** контейнер.
+
+**Когда использовать:**
+- Сложные формы с точным размещением (регистрация, настройки).
+- Когда нужно выравнивание по строкам и столбцам.
+- Для создания макета всего окна.
+
+**Пример:**
+```xml
+<Grid>
+    <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>   <!-- высота по содержимому -->
+        <RowDefinition Height="*"/>      <!-- занимает всё оставшееся -->
+        <RowDefinition Height="2*"/>     <!-- в 2 раза больше предыдущего -->
+    </Grid.RowDefinitions>
+    <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="100"/>  <!-- фиксированная ширина -->
+        <ColumnDefinition Width="*"/>    <!-- занимает остаток -->
+    </Grid.ColumnDefinitions>
+    
+    <Label Grid.Row="0" Grid.Column="0" Content="Имя:"/>
+    <TextBox Grid.Row="0" Grid.Column="1"/>
+    
+    <Label Grid.Row="1" Grid.Column="0" Content="Описание:"/>
+    <TextBox Grid.Row="1" Grid.Column="1" TextWrapping="Wrap"/>
+    
+    <Button Grid.Row="2" Grid.ColumnSpan="2" Content="Сохранить"/>
+</Grid>
+```
+
+**2. `StackPanel` — стек элементов**
+
+**Принцип:** располагает элементы **последовательно** по вертикали (по умолчанию) или горизонтали.
+
+**Когда использовать:**
+- Простые списки кнопок, меню.
+- Форма с полями ввода друг под другом.
+- Когда элементы должны идти один за другим.
+
+**Пример:**
+```xml
+<StackPanel Orientation="Vertical">
+    <Label Content="Имя:"/>
+    <TextBox/>
+    <Label Content="Возраст:"/>
+    <TextBox/>
+    <Button Content="Сохранить"/>
+</StackPanel>
+
+<!-- Горизонтальный стек -->
+<StackPanel Orientation="Horizontal">
+    <Button Content="OK"/>
+    <Button Content="Отмена"/>
+</StackPanel>
+```
+
+**3. `WrapPanel` — стек с переносом**
+
+**Принцип:** как `StackPanel`, но при **нехватке места** переносит элементы на следующую строку (или столбец).
+
+**Когда использовать:**
+- Плиточные галереи, теги.
+- Кнопки, которые должны переноситься при изменении размера окна.
+- Когда количество элементов неизвестно заранее.
+
+**Пример:**
+```xml
+<WrapPanel>
+    <Button Content="Кнопка 1" Width="100"/>
+    <Button Content="Кнопка 2" Width="100"/>
+    <Button Content="Кнопка 3" Width="100"/>
+    <!-- При узком окне кнопки перенесутся на следующую строку -->
+</WrapPanel>
+```
+
+**4. `DockPanel` — прикрепление к краям**
+
+**Принцип:** выравнивает элементы по краю контейнера (`Left`, `Right`, `Top`, `Bottom`). Последний элемент заполняет оставшееся пространство (если `LastChildFill="True"`).
+
+**Когда использовать:**
+- Шаблон с меню вверху, статусной строкой внизу, основным контентом в центре.
+- Когда нужно прикрепить элементы к краям окна.
+
+**Пример:**
+```xml
+<DockPanel LastChildFill="True">
+    <Menu DockPanel.Dock="Top">
+        <MenuItem Header="Файл"/>
+        <MenuItem Header="Редактирование"/>
+    </Menu>
+    
+    <StatusBar DockPanel.Dock="Bottom">
+        <TextBlock Text="Готово"/>
+    </StatusBar>
+    
+    <TreeView DockPanel.Dock="Left" Width="200"/>
+    
+    <!-- Этот элемент займёт всё оставшееся пространство -->
+    <Grid>
+        <TextBlock Text="Основной контент"/>
+    </Grid>
+</DockPanel>
+```
+
+**5. `Canvas` — абсолютные координаты**
+
+**Принцип:** позиционирование элементов по **абсолютным координатам** (`Canvas.Left`, `Canvas.Top`).
+
+**Когда использовать:**
+- Рисование, графические редакторы.
+- Анимация, перетаскивание элементов.
+- Когда нужно точное позиционирование в пикселях.
+
+**Пример:**
+```xml
+<Canvas Width="400" Height="300" Background="LightGray">
+    <Button Canvas.Left="50" Canvas.Top="100" Content="Кнопка"/>
+    <Ellipse Canvas.Left="200" Canvas.Top="50" Width="100" Height="100" Fill="Red"/>
+</Canvas>
+```
+
+**6. `UniformGrid` — сетка с одинаковыми ячейками**
+
+**Принцип:** формирует сетку, где **все ячейки одного размера**. Требует указания количества строк и столбцов.
+
+**Когда использовать:**
+- Игровые поля (шахматы, крестики-нолики).
+- Клавиатуры, калькуляторы.
+- Когда все элементы должны быть одинакового размера.
+
+**Пример:**
+```xml
+<UniformGrid Rows="3" Columns="3">
+    <Button Content="1"/>
+    <Button Content="2"/>
+    <Button Content="3"/>
+    <Button Content="4"/>
+    <Button Content="5"/>
+    <Button Content="6"/>
+    <Button Content="7"/>
+    <Button Content="8"/>
+    <Button Content="9"/>
+</UniformGrid>
+```
+
+### Сводная таблица выбора
+
+| Контейнер | Когда применять | Особенности |
+|-----------|-----------------|-------------|
+| `Grid` | Сложные формы, точное размещение | Строки/столбцы, гибкий |
+| `StackPanel` | Простые списки, формы | Вертикально/горизонтально |
+| `WrapPanel` | Плитки, теги, галереи | Перенос при нехватке места |
+| `DockPanel` | Меню, статусные строки | Прикрепление к краям |
+| `Canvas` | Рисование, анимация | Абсолютные координаты |
+| `UniformGrid` | Игровые поля, клавиатуры | Одинаковые ячейки |
+
+### Комбинирование контейнеров
+
+На практике контейнеры часто **вкладываются** друг в друга:
+```xml
+<DockPanel>
+    <Menu DockPanel.Dock="Top"/>
+    
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        
+        <StackPanel Grid.Column="0">
+            <Button Content="Кнопка 1"/>
+            <Button Content="Кнопка 2"/>
+        </StackPanel>
+        
+        <TabControl Grid.Column="1">
+            <!-- содержимое -->
+        </TabControl>
+    </Grid>
+</DockPanel>
+```
+
+---
+
+## 28. Опишите основные элементы управления в WPF. В каких ситуациях применяется каждый из них?
+
+WPF предоставляет **широкий набор элементов управления** для создания пользовательского интерфейса. Они делятся на категории: ввод/вывод текста, кнопки и выбор, списки, навигация и прочее.
+
+### Ввод и вывод текста
+
+**1. `Label` — статический текст (подпись)**
+- Нередактируемый текст, обычно используется как **подпись к полю ввода**.
+- Поддерживает клавиши доступа (Alt+буква).
+```xml
+<Label Content="_Имя:" Target="{Binding ElementName=txtName}"/>
+<TextBox Name="txtName"/>
+```
+
+**2. `TextBlock` — многострочный текст без рамки**
+- Для отображения текста с форматированием (полужирный, подчёркивание).
+- Не имеет рамки, не редактируется.
+```xml
+<TextBlock Text="Привет, мир!" FontSize="16" FontWeight="Bold"/>
+```
+
+**3. `TextBox` — однострочный ввод текста**
+- Редактируемое текстовое поле.
+- Поддерживает валидацию, привязку данных.
+```xml
+<TextBox Name="txtName" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+```
+
+**4. `PasswordBox` — ввод пароля**
+- Скрывает вводимые символы (звёздочки).
+- Использует `SecureString` для защиты.
+```xml
+<PasswordBox Name="pwdBox"/>
+```
+
+**5. `RichTextBox` — форматированный текст**
+- Позволяет вводить текст с форматированием (жирный, курсив, цвет).
+```xml
+<RichTextBox Name="rtbEditor"/>
+```
+
+### Кнопки и выбор
+
+**6. `Button` — обычная кнопка**
+- Выполняет действие при нажатии (событие `Click`).
+- Может содержать текст, изображения, другие элементы.
+```xml
+<Button Content="Сохранить" Click="btnSave_Click"/>
+```
+
+**7. `CheckBox` — флажок (да/нет)**
+- Два состояния: установлен/снят.
+- Можно выбрать **несколько** флажков одновременно.
+```xml
+<CheckBox Content="Согласен с условиями" IsChecked="{Binding IsAgreed}"/>
+```
+
+**8. `RadioButton` — переключатель (один из нескольких)**
+- Выбор **одного** варианта из группы.
+-RadioButton с одинаковым `GroupName` образуют группу.
+```xml
+<StackPanel>
+    <RadioButton GroupName="Gender" Content="Мужской" IsChecked="True"/>
+    <RadioButton GroupName="Gender" Content="Женский"/>
+</StackPanel>
+```
+
+**9. `ToggleButton` — кнопка с состоянием**
+- Кнопка, которая «залипает» (вкл/выкл).
+```xml
+<ToggleButton Content="Жирный" Checked="btnBold_Checked" Unchecked="btnBold_Unchecked"/>
+```
+
+### Списки и выбор элементов
+
+**10. `ComboBox` — выпадающий список**
+- Компактный: показывает один элемент, разворачивается по клику.
+- Выбор **одного** элемента из списка.
+```xml
+<ComboBox ItemsSource="{Binding Cities}" SelectedItem="{Binding SelectedCity}"/>
+```
+
+**11. `ListBox` — список с прокруткой**
+- Отображает все элементы сразу (с прокруткой).
+- Поддерживает одиночный и множественный выбор.
+```xml
+<ListBox ItemsSource="{Binding Students}" SelectedItem="{Binding SelectedStudent}"/>
+```
+
+**12. `DataGrid` — таблица**
+- Отображает коллекцию объектов в виде **таблицы** с колонками.
+- Поддерживает сортировку, редактирование, выбор строк.
+```xml
+<DataGrid ItemsSource="{Binding Students}" AutoGenerateColumns="False">
+    <DataGrid.Columns>
+        <DataGridTextColumn Header="Имя" Binding="{Binding Name}"/>
+        <DataGridTextColumn Header="Возраст" Binding="{Binding Age}"/>
+    </DataGrid.Columns>
+</DataGrid>
+```
+
+**13. `TreeView` — иерархический список**
+- Древовидная структура (файловое дерево, меню).
+```xml
+<TreeView>
+    <TreeViewItem Header="Корень">
+        <TreeViewItem Header="Узел 1"/>
+        <TreeViewItem Header="Узел 2"/>
+    </TreeViewItem>
+</TreeView>
+```
+
+### Навигация и прочее
+
+**14. `TabControl` — вкладки**
+- Разделение контента на вкладки.
+```xml
+<TabControl>
+    <TabItem Header="Основное">
+        <TextBlock Text="Содержимое вкладки 1"/>
+    </TabItem>
+    <TabItem Header="Дополнительно">
+        <TextBlock Text="Содержимое вкладки 2"/>
+    </TabItem>
+</TabControl>
+```
+
+**15. `Slider` — ползунок**
+- Выбор числового значения в диапазоне.
+```xml
+<Slider Minimum="0" Maximum="100" Value="{Binding Volume}"/>
+```
+
+**16. `ProgressBar` — индикатор прогресса**
+- Показывает прогресс выполнения операции.
+```xml
+<ProgressBar Value="50" Maximum="100"/>
+```
+
+**17. `Image` — изображение**
+- Отображение картинок (PNG, JPG, GIF).
+```xml
+<Image Source="Images/logo.png" Width="100"/>
+```
+
+**18. `Calendar` / `DatePicker` — выбор даты**
+- `Calendar` — календарь для выбора даты.
+- `DatePicker` — поле с выпадающим календарём.
+```xml
+<DatePicker SelectedDate="{Binding BirthDate}"/>
+```
+
+**19. `Menu` — меню**
+- Главное меню приложения.
+```xml
+<Menu>
+    <MenuItem Header="Файл">
+        <MenuItem Header="Открыть" Click="mnuOpen_Click"/>
+        <MenuItem Header="Выход" Click="mnuExit_Click"/>
+    </MenuItem>
+</Menu>
+```
+
+**20. `StatusBar` — статусная строка**
+- Нижняя строка с информацией о состоянии.
+```xml
+<StatusBar>
+    <TextBlock Text="Готово"/>
+</StatusBar>
+```
+
+### Сводная таблица выбора
+
+| Элемент | Когда применять |
+|---------|-----------------|
+| `Label` | Подпись к полю ввода |
+| `TextBlock` | Отображение текста (нередактируемого) |
+| `TextBox` | Ввод текста (одна строка) |
+| `PasswordBox` | Ввод пароля |
+| `Button` | Выполнение действия |
+| `CheckBox` | Выбор нескольких вариантов (да/нет) |
+| `RadioButton` | Выбор одного из нескольких |
+| `ComboBox` | Выбор одного из списка (компактно) |
+| `ListBox` | Выбор из списка (все видны) |
+| `DataGrid` | Таблица с данными |
+| `TreeView` | Иерархический список |
+| `TabControl` | Разделение на вкладки |
+| `DatePicker` | Выбор даты |
+
+---
+
+## 29. При помощи каких элементов можно организовать навигацию в WPF-приложении? Опишите принцип работы.
+
+В WPF есть **три основных способа** организации навигации между экранами приложения: открытие новых окон (`Window`), использование `Frame` + `Page`, и переключение `UserControl`. Каждый способ подходит для своих задач.
+
+### Способ 1: Открытие нового окна (`Window`)
+
+**Принцип:** создаётся отдельный объект `Window` — независимое окно с собственной логикой.
+
+**Когда использовать:**
+- Диалоговые окна (настройки, подтверждение).
+- Независимые экраны, которые могут работать параллельно.
+
+**Пример:**
+```csharp
+// 1. Немодальное окно (работают оба окна одновременно)
+var secondWindow = new SecondWindow();
+secondWindow.Show();
+
+// 2. Модальное окно (блокирует главное окно до закрытия)
+var settingsWindow = new SettingsWindow();
+bool? result = settingsWindow.ShowDialog();
+if (result == true) {
+    // Пользователь нажал OK в окне настроек
+    ReloadSettings();
+}
+```
+
+**Внутри `SettingsWindow`:**
+```csharp
+// При нажатии кнопки OK:
+private void btnOK_Click(object sender, RoutedEventArgs e) {
+    this.DialogResult = true;  // устанавливаем результат
+    this.Close();              // закрываем окно
+}
+```
+
+**Преимущества:**
+- Полная независимость окон.
+- Простота реализации.
+
+**Недостатки:**
+- Нет истории навигации (кнопки «Назад»/«Вперёд»).
+- Каждое окно — отдельный объект в памяти.
+
+### Способ 2: `Frame` + `Page` (навигация внутри окна)
+
+**Принцип:** `Frame` — контейнер в главном окне, который отображает объекты `Page`. Поддерживает **историю навигации** (вперёд/назад), как браузер.
+
+**Когда использовать:**
+- Многостраничные приложения (мастера настройки, пошаговые формы).
+- Когда нужна навигация «Назад»/«Вперёд».
+
+**Пример:**
+
+**XAML главного окна:**
+```xml
+<Window>
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+            <Button Content="← Назад" Click="btnBack_Click"/>
+            <Button Content="Вперёд →" Click="btnForward_Click"/>
+        </StackPanel>
+        
+        <!-- Frame для отображения страниц -->
+        <Frame Name="MainFrame" NavigationUIVisibility="Hidden"/>
+    </DockPanel>
+</Window>
+```
+
+**Code-behind:**
+```csharp
+public partial class MainWindow : Window {
+    public MainWindow() {
+        InitializeComponent();
+        // Загружаем первую страницу
+        MainFrame.Navigate(new HomePage());
+    }
+    
+    private void btnBack_Click(object sender, RoutedEventArgs e) {
+        if (MainFrame.CanGoBack)
+            MainFrame.GoBack();
+    }
+    
+    private void btnForward_Click(object sender, RoutedEventArgs e) {
+        if (MainFrame.CanGoForward)
+            MainFrame.GoForward();
+    }
+}
+```
+
+**Создание страницы (`StudentsPage.xaml`):**
+```xml
+<Page x:Class="MyApp.StudentsPage">
+    <StackPanel>
+        <TextBlock Text="Список студентов" FontSize="20"/>
+        <ListBox ItemsSource="{Binding Students}"/>
+        <Button Content="Добавить" Click="btnAdd_Click"/>
+    </StackPanel>
+</Page>
+```
+
+**Переход на страницу:**
+```csharp
+// По типу:
+MainFrame.Navigate(new StudentsPage());
+
+// По URI:
+MainFrame.Navigate(new Uri("Views/StudentsPage.xaml", UriKind.Relative));
+```
+
+**Передача данных между страницами:**
+```csharp
+// Через конструктор:
+MainFrame.Navigate(new StudentDetailsPage(selectedStudent));
+
+// В StudentDetailsPage:
+public StudentDetailsPage(Student student) {
+    InitializeComponent();
+    this.DataContext = student;
+}
+```
+
+**Преимущества:**
+- История навигации (вперёд/назад).
+- Единое окно — меньше ресурсов.
+- Встроенная навигация (`NavigationService`).
+
+**Недостатки:**
+- `Page` тяжелее, чем `UserControl`.
+- Ограниченная стилизация.
+
+### Способ 3: Переключение `UserControl`
+
+**Принцип:** в `ContentControl` подменяется `UserControl` — более лёгкий вариант **без истории навигации**.
+
+**Когда использовать:**
+- Когда не нужна история навигации.
+- Для переключения между представлениями (View) в MVVM.
+- Когда важна производительность.
+
+**Пример:**
+
+**XAML главного окна:**
+```xml
+<Window>
+    <ContentControl Name="MainContent"/>
+</Window>
+```
+
+**Code-behind:**
+```csharp
+// Переключение между представлениями
+MainContent.Content = new StudentsView();
+// или
+MainContent.Content = new GroupsView();
+```
+
+**Преимущества:**
+- Легче и быстрее, чем `Page`.
+- Полная свобода стилизации.
+- Идеально для MVVM.
+
+**Недостатки:**
+- Нет истории навигации.
+- Нужно вручную управлять переключением.
+
+### Сравнение способов
+
+| Способ | История навигации | Производительность | Когда применять |
+|--------|-------------------|-------------------|-----------------|
+| `Window` | ❌ | Средняя | Диалоги, независимые окна |
+| `Frame` + `Page` | ✅ | Средняя | Многостраничные приложения |
+| `UserControl` | ❌ | Высокая | MVVM, переключение View |
+
+### Практический пример: приложение с авторизацией
+
+```csharp
+public partial class MainWindow : Window {
+    public MainWindow() {
+        InitializeComponent();
+        ShowLoginPage();
+    }
+    
+    private void ShowLoginPage() {
+        MainContent.Content = new LoginView();
+    }
+    
+    private void ShowMainPage() {
+        MainContent.Content = new MainView();
+    }
+    
+    // Вызывается из LoginView после успешной авторизации
+    public void OnLoginSuccess() {
+        ShowMainPage();
+    }
+}
+```
+
+### Рекомендации
+
+**1.** Для простых приложений с 2-3 экранами — используйте `UserControl` + `ContentControl`.
+
+**2.** Для приложений с историей навигации (мастера, пошаговые формы) — `Frame` + `Page`.
+
+**3.** Для диалогов и независимых окон — `Window`.
+
+**4.** В MVVM-приложениях — чаще всего `UserControl` + переключение через `DataTemplate`.
+
+---
+
+## 30. Объясните, что такое Binding в WPF. Как работает Binding и какие режимы Binding существуют?
+
+**Binding (привязка данных)** — это механизм WPF, который устанавливает **автоматическую синхронизацию** между свойствами элементов интерфейса (UI) и данными (источником). Изменение данных → обновление UI, и наоборот. Это **основа паттерна MVVM**.
+
+### Зачем нужен Binding
+
+**Без Binding (плохо):**
+```csharp
+// Вручную обновляем UI при изменении данных
+private void txtName_TextChanged(object sender, TextChangedEventArgs e) {
+    txtResult.Text = $"Привет, {txtName.Text}!";
+}
+```
+
+**С Binding (хорошо):**
+```xml
+<TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+<TextBlock Text="{Binding Name, StringFormat='Привет, {0}!'}"/>
+```
+UI обновляется **автоматически** при изменении свойства `Name`.
+
+### Как работает Binding
+
+**Компоненты привязки:**
+
+**1. Цель (Target)**
+- Свойство элемента UI, которое получает данные.
+- Должно быть **свойством зависимости** (`DependencyProperty`).
+- **Пример:** `Text` у `TextBox`, `Content` у `TextBlock`.
+
+**2. Источник (Source)**
+- Объект, содержащий данные.
+- Устанавливается через `DataContext`.
+- **Пример:** объект `StudentViewModel`.
+
+**3. Путь (Path)**
+- Указание на конкретное свойство в источнике.
+- **Пример:** `Name`, `Age`, `Address.City`.
+
+**4. Режим (Mode)**
+- Определяет направление потока данных.
+
+### Базовый пример Binding
+
+**XAML:**
+```xml
+<Window>
+    <StackPanel>
+        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+        <TextBlock Text="{Binding Name}"/>
+        <TextBlock Text="{Binding Age, StringFormat='Возраст: {0}'}"/>
+    </StackPanel>
+</Window>
+```
+
+**Code-behind:**
+```csharp
+public partial class MainWindow : Window {
+    public MainWindow() {
+        InitializeComponent();
+        // Устанавливаем источник данных
+        this.DataContext = new StudentViewModel {
+            Name = "Анна",
+            Age = 20
+        };
+    }
+}
+```
+
+**Результат:** при вводе текста в `TextBox`, `TextBlock` автоматически обновляется.
+
+### Режимы Binding (Binding Modes)
+
+**1. `OneWay` — данные → UI**
+- Изменение источника обновляет UI.
+- Изменение UI **не влияет** на источник.
+- **По умолчанию** для `TextBlock`, `Label`.
+```xml
+<TextBlock Text="{Binding Name, Mode=OneWay}"/>
+```
+
+**2. `TwoWay` — данные ↔ UI**
+- Изменение источника обновляет UI.
+- Изменение UI обновляет источник.
+- **По умолчанию** для `TextBox`, `CheckBox`.
+```xml
+<TextBox Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+```
+
+**3. `OneWayToSource` — UI → данные**
+- Изменение UI обновляет источник.
+- Изменение источника **не влияет** на UI.
+```xml
+<TextBox Text="{Binding Name, Mode=OneWayToSource}"/>
+```
+
+**4. `OneTime` — одноразовое чтение**
+- Данные читаются **один раз** при загрузке.
+- Дальнейшие изменения **не синхронизируются**.
+```xml
+<TextBlock Text="{Binding Name, Mode=OneTime}"/>
+```
+
+### Сводная таблица режимов
+
+| Режим | Источник → UI | UI → Источник | Когда применять |
+|-------|---------------|---------------|-----------------|
+| `OneWay` | ✅ | ❌ | Отображение данных (TextBlock) |
+| `TwoWay` | ✅ | ✅ | Ввод данных (TextBox, CheckBox) |
+| `OneWayToSource` | ❌ | ✅ | Логирование, аудит |
+| `OneTime` | ✅ (один раз) | ❌ | Статические данные |
+
+### `UpdateSourceTrigger` — когда обновлять источник
+
+Для `TwoWay` Binding важно, **когда** изменения из UI передаются в источник:
+
+**1. `Default`** — по умолчанию для элемента.
+- Для `TextBox` — при потере фокуса (`LostFocus`).
+
+**2. `PropertyChanged`** — при каждом изменении.
+```xml
+<TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+```
+UI обновляется **мгновенно** при вводе каждого символа.
+
+**3. `LostFocus`** — при потере фокуса.
+```xml
+<TextBox Text="{Binding Name, UpdateSourceTrigger=LostFocus}"/>
+```
+Источник обновляется, когда пользователь уходит с поля.
+
+**4. `Explicit`** — только при явном вызове.
+```xml
+<TextBox Text="{Binding Name, UpdateSourceTrigger=Explicit}"/>
+```
+```csharp
+// Вручную обновляем источник:
+BindingExpression be = txtName.GetBindingExpression(TextBox.TextProperty);
+be.UpdateSource();
+```
+
+### `INotifyPropertyChanged` — уведомление об изменении
+
+Чтобы Binding работал, ViewModel должна **уведомлять UI** об изменении свойств через интерфейс `INotifyPropertyChanged`.
+
+**Пример:**
+```csharp
+class StudentViewModel : INotifyPropertyChanged {
+    // Событие, которое уведомляет UI об изменении
+    public event PropertyChangedEventHandler PropertyChanged;
+    
+    private string _name;
+    public string Name {
+        get => _name;
+        set {
+            if (_name != value) {
+                _name = value;
+                // Уведомляем UI, что свойство Name изменилось
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name)));
+            }
+        }
+    }
+    
+    private int _age;
+    public int Age {
+        get => _age;
+        set {
+            if (_age != value) {
+                _age = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Age)));
+            }
+        }
+    }
+}
+```
+
+**Без `INotifyPropertyChanged` Binding не будет работать!** UI не узнает об изменении данных.
+
+### Упрощение с `CallerMemberName` (C# 5+)
+
+```csharp
+class StudentViewModel : INotifyPropertyChanged {
+    public event PropertyChangedEventHandler PropertyChanged;
+    
+    protected void OnPropertyChanged([CallerMemberName] string propertyName = null) {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+    
+    private string _name;
+    public string Name {
+        get => _name;
+        set {
+            _name = value;
+            OnPropertyChanged();  // автоматически передаёт "Name"
+        }
+    }
+}
+```
+
+### Привязка к коллекциям
+
+Для привязки к спискам используется `ItemsSource`:
+```xml
+<ListBox ItemsSource="{Binding Students}" 
+         SelectedItem="{Binding SelectedStudent}"
+         DisplayMemberPath="Name"/>
+```
+
+**Важно:** коллекция должна реализовывать `INotifyCollectionChanged` (обычно `ObservableCollection<T>`), чтобы UI обновлялся при добавлении/удалении элементов.
+
+```csharp
+class StudentsViewModel : INotifyPropertyChanged {
+    public ObservableCollection<Student> Students { get; set; }
+    
+    public StudentsViewModel() {
+        Students = new ObservableCollection<Student> {
+            new Student { Name = "Анна", Age = 20 },
+            new Student { Name = "Иван", Age = 22 }
+        };
+    }
+}
+```
+
+### Практический пример: форма редактирования студента
+
+**XAML:**
+```xml
+<Window>
+    <StackPanel Margin="20">
+        <TextBlock Text="Имя:"/>
+        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+        
+        <TextBlock Text="Возраст:"/>
