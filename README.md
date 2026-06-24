@@ -3164,7 +3164,259 @@ class StudentsViewModel : INotifyPropertyChanged {
 **5.** Используй `StringFormat` для форматирования без конвертеров.
 
 ---
-## 31. Опишите основные способы работы с файлами в C#. Какие классы используются для чтения и записи данных?
+## 31. Какие элементы используются для отображения списков в WPF? Когда применять каждый из них?
+
+В WPF для отображения списков используется несколько элементов управления, каждый из которых имеет свои особенности и сценарии применения.
+
+### `ListBox` — список с прокруткой
+**Принцип:** отображает плоский список элементов с возможностью прокрутки. Поддерживает **одиночный и множественный выбор**.
+
+**Когда применять:**
+- Список городов, категорий, небольших данных
+- Когда нужно видеть все элементы сразу
+- Когда возможен множественный выбор
+
+**Пример:**
+```xml
+<ListBox ItemsSource="{Binding Students}" 
+         SelectedItem="{Binding SelectedStudent}"
+         DisplayMemberPath="Name"/>
+```
+
+### `ComboBox` — выпадающий список
+**Принцип:** компактный элемент, показывает один элемент, разворачивается по клику. Позволяет выбрать **один** элемент из списка.
+
+**Когда применять:**
+- Выбор пола, города, категории в форме
+- Когда мало места на экране
+- Когда нужен выбор одного элемента
+
+**Пример:**
+```xml
+<ComboBox ItemsSource="{Binding Cities}" 
+          SelectedItem="{Binding SelectedCity}"/>
+```
+
+### `DataGrid` — таблица с колонками
+**Принцип:** отображает коллекцию объектов в виде **таблицы** со строками и столбцами. Поддерживает **сортировку, редактирование, выбор строк**.
+
+**Когда применять:**
+- Список студентов, заказов, продуктов
+- Когда нужно отображать несколько полей объекта
+- Когда нужна сортировка и редактирование
+
+**Пример:**
+```xml
+<DataGrid ItemsSource="{Binding Students}" 
+          AutoGenerateColumns="False"
+          SelectedItem="{Binding SelectedStudent}">
+    <DataGrid.Columns>
+        <DataGridTextColumn Header="Имя" Binding="{Binding Name}"/>
+        <DataGridTextColumn Header="Возраст" Binding="{Binding Age}"/>
+        <DataGridTextColumn Header="GPA" Binding="{Binding GPA}"/>
+    </DataGrid.Columns>
+</DataGrid>
+```
+
+### `ListView` — расширенный список
+**Принцип:** как `ListBox`, но поддерживает шаблоны представления (`GridView`). Подходит для списков с несколькими колонками, когда `DataGrid` избыточен.
+
+**Когда применять:**
+- Списки с несколькими колонками
+- Когда нужна кастомизация внешнего вида
+- Когда `DataGrid` слишком сложен
+
+### Сводная таблица выбора
+
+| Элемент | Выбор | Когда применять |
+|---------|-------|-----------------|
+| `ListBox` | Один или несколько | Простой список, множественный выбор |
+| `ComboBox` | Один | Компактный выбор одного элемента |
+| `DataGrid` | Один (строка) | Таблица, сортировка, редактирование |
+| `ListView` | Один или несколько | Список с колонками, кастомизация |
+
+---
+
+## 32. Опишите способы создания диалоговых и всплывающих окон в WPF. В чём разница между MessageBox и пользовательским окном?
+
+В WPF есть два основных способа создания диалоговых окон: **MessageBox** (стандартное системное окно) и **пользовательское окно** (кастомизированный `Window`).
+
+### `MessageBox` — стандартное системное окно
+
+**Принцип:** встроенный класс для быстрого отображения сообщения с кнопками. Не требует создания нового класса.
+
+**Особенности:**
+- Только стандартные кнопки: OK, Cancel, Yes/No, Yes/No/Cancel
+- Стандартные иконки: Information, Warning, Error, Question
+- Нет возможности кастомизации (цвета, шрифты, дополнительные элементы)
+- Модальное окно (блокирует родительское окно)
+
+**Примеры:**
+```csharp
+// Информационное сообщение
+MessageBox.Show("Сохранено!", "Успех", 
+    MessageBoxButton.OK, MessageBoxImage.Information);
+
+// Диалог с подтверждением
+var result = MessageBox.Show("Удалить запись?", "Подтверждение",
+    MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+if (result == MessageBoxResult.Yes) {
+    // Пользователь нажал "Да"
+    DeleteRecord();
+}
+
+// Диалог с тремя кнопками
+var result2 = MessageBox.Show("Сохранить изменения?", "Выход",
+    MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+
+if (result2 == MessageBoxResult.Yes) {
+    SaveAndClose();
+} else if (result2 == MessageBoxResult.No) {
+    CloseWithoutSaving();
+} else {
+    // Отмена — ничего не делаем
+}
+```
+
+**Когда использовать:**
+- Простые уведомления ("Сохранено!", "Ошибка!")
+- Подтверждение действий ("Удалить?", "Выйти?")
+- Когда не нужна кастомизация
+
+### Пользовательское окно (`Window`) — кастомизированный диалог
+
+**Принцип:** создаётся как отдельный класс-окно с полным контролем над содержимым. Можно добавить любые элементы, стили, валидацию.
+
+**Особенности:**
+- Полная кастомизация (любые элементы управления, стили, цвета)
+- Можно добавить форму ввода, валидацию, сложные элементы
+- Поддерживает передачу данных через конструктор
+- Может быть модальным (`ShowDialog()`) или немодальным (`Show()`)
+
+**Пример:**
+
+**Создание окна редактирования студента:**
+```csharp
+// EditStudentWindow.xaml
+<Window x:Class="MyApp.EditStudentWindow">
+    <StackPanel Margin="20">
+        <TextBlock Text="Имя:"/>
+        <TextBox Name="txtName"/>
+        
+        <TextBlock Text="Возраст:"/>
+        <TextBox Name="txtAge"/>
+        
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Content="OK" Width="80" Click="btnOK_Click"/>
+            <Button Content="Отмена" Width="80" Click="btnCancel_Click" Margin="10,0,0,0"/>
+        </StackPanel>
+    </StackPanel>
+</Window>
+```
+
+**Code-behind:**
+```csharp
+public partial class EditStudentWindow : Window {
+    private Student _student;
+    
+    // Конструктор принимает данные для редактирования
+    public EditStudentWindow(Student student) {
+        InitializeComponent();
+        _student = student;
+        
+        // Заполняем поля текущими значениями
+        txtName.Text = student.Name;
+        txtAge.Text = student.Age.ToString();
+    }
+    
+    private void btnOK_Click(object sender, RoutedEventArgs e) {
+        // Валидация
+        if (string.IsNullOrWhiteSpace(txtName.Text)) {
+            MessageBox.Show("Введите имя!");
+            return;
+        }
+        
+        if (!int.TryParse(txtAge.Text, out int age) || age < 0 || age > 150) {
+            MessageBox.Show("Некорректный возраст!");
+            return;
+        }
+        
+        // Обновляем данные
+        _student.Name = txtName.Text;
+        _student.Age = age;
+        
+        // Устанавливаем результат и закрываем
+        this.DialogResult = true;
+        this.Close();
+    }
+    
+    private void btnCancel_Click(object sender, RoutedEventArgs e) {
+        this.DialogResult = false;
+        this.Close();
+    }
+}
+```
+
+**Вызов окна из главного окна:**
+```csharp
+private void btnEdit_Click(object sender, RoutedEventArgs e) {
+    if (selectedStudent == null) {
+        MessageBox.Show("Выберите студента!");
+        return;
+    }
+    
+    var editWindow = new EditStudentWindow(selectedStudent);
+    bool? result = editWindow.ShowDialog();  // модальное окно
+    
+    if (result == true) {
+        // Пользователь нажал OK — данные обновлены
+        RefreshStudentList();
+        MessageBox.Show("Изменения сохранены!");
+    } else {
+        // Пользователь нажал Отмена — ничего не делаем
+    }
+}
+```
+
+### Сравнительная таблица
+
+| Характеристика | `MessageBox` | Пользовательское окно |
+|----------------|--------------|----------------------|
+| Создание | Не требуется новый класс | Создаётся отдельный класс |
+| Кастомизация | Только текст и кнопки | Любые элементы, стили |
+| Ввод данных | Нет | Да (формы, валидация) |
+| Передача данных | Нет | Через конструктор |
+| Сложность | Очень просто | Требует больше кода |
+| Когда использовать | Уведомления, подтверждения | Формы ввода, сложные диалоги |
+
+### Модальные vs немодальные окна
+
+**Модальное окно (`ShowDialog()`):**
+- Блокирует родительское окно до закрытия
+- Пользователь не может работать с главным окном
+- Возвращает `bool?` (true/false/null)
+- Используется для диалогов, где нужно получить результат
+
+**Немодальное окно (`Show()`):**
+- Не блокирует родительское окно
+- Пользователь может работать с обоими окнами
+- Не возвращает результат
+- Используется для независимых окон (настройки, справка)
+
+```csharp
+// Модальное — блокирует главное окно
+var dialog = new EditStudentWindow(student);
+bool? result = dialog.ShowDialog();
+
+// Немодальное — не блокирует
+var settings = new SettingsWindow();
+settings.Show();
+```
+
+---
+
+## 33. Опишите основные способы работы с файлами в C#. Какие классы используются для чтения и записи данных?
 
 В C# работа с файлами осуществляется через классы из пространства имён `System.IO`. Существует два подхода: **статические классы** (для простых операций) и **экземплярные классы** (для сложных операций с одним файлом).
 
@@ -3178,7 +3430,7 @@ class StudentsViewModel : INotifyPropertyChanged {
 // Чтение всего файла в строку
 string content = File.ReadAllText("data.txt");
 
-// Запись строки в файл
+// Запись строки в файл (перезаписывает)
 File.WriteAllText("output.txt", "Привет, мир!");
 
 // Чтение всех строк в массив
@@ -3186,6 +3438,9 @@ string[] lines = File.ReadAllLines("data.txt");
 
 // Запись массива строк
 File.WriteAllLines("output.txt", new[] { "Строка 1", "Строка 2" });
+
+// Добавление в конец файла
+File.AppendAllText("log.txt", $"[{DateTime.Now}] Событие\n");
 
 // Проверка существования файла
 bool exists = File.Exists("data.txt");
@@ -3209,11 +3464,12 @@ bool exists = Directory.Exists("MyFolder");
 
 // Получение списка файлов
 string[] files = Directory.GetFiles("MyFolder");
+string[] txtFiles = Directory.GetFiles("MyFolder", "*.txt");  // только .txt
 
 // Получение списка подпапок
 string[] dirs = Directory.GetDirectories("MyFolder");
 
-// Удаление папки
+// Удаление папки (рекурсивно — со всем содержимым)
 Directory.Delete("MyFolder", recursive: true);
 ```
 
@@ -3229,6 +3485,7 @@ var fileInfo = new FileInfo("data.txt");
 // Получение информации о файле
 Console.WriteLine($"Размер: {fileInfo.Length} байт");
 Console.WriteLine($"Создан: {fileInfo.CreationTime}");
+Console.WriteLine($"Последнее изменение: {fileInfo.LastWriteTime}");
 Console.WriteLine($"Существует: {fileInfo.Exists}");
 
 // Создание файла
@@ -3237,7 +3494,7 @@ using (FileStream fs = fileInfo.Create()) {
 }
 
 // Копирование
-fileInfo.CopyTo("backup.txt");
+fileInfo.CopyTo("backup.txt", overwrite: true);
 
 // Удаление
 fileInfo.Delete();
@@ -3261,7 +3518,7 @@ DirectoryInfo[] subDirs = dirInfo.GetDirectories();
 - Экономят память при работе с большими файлами.
 
 ```csharp
-// Чтение построчно
+// Чтение построчно (для больших файлов)
 using (var reader = new StreamReader("data.txt")) {
     string line;
     while ((line = reader.ReadLine()) != null) {
@@ -3269,10 +3526,10 @@ using (var reader = new StreamReader("data.txt")) {
     }
 }
 
-// Запись построчно
-using (var writer = new StreamWriter("output.txt")) {
-    writer.WriteLine("Строка 1");
-    writer.WriteLine("Строка 2");
+// Запись построчно (добавление в конец)
+using (var writer = new StreamWriter("log.txt", append: true)) {
+    writer.WriteLine($"[{DateTime.Now:HH:mm:ss}] Событие 1");
+    writer.WriteLine($"[{DateTime.Now:HH:mm:ss}] Событие 2");
 }
 ```
 
@@ -3283,24 +3540,35 @@ using (var writer = new StreamWriter("output.txt")) {
 - Подходит для бинарных файлов (изображения, видео).
 
 ```csharp
-using (var fs = new FileStream("data.bin", FileMode.Open)) {
+// Чтение бинарного файла
+using (var fs = new FileStream("image.png", FileMode.Open)) {
     byte[] buffer = new byte[fs.Length];
     fs.Read(buffer, 0, buffer.Length);
+}
+
+// Запись бинарного файла
+using (var fs = new FileStream("output.bin", FileMode.Create)) {
+    byte[] data = { 1, 2, 3, 4, 5 };
+    fs.Write(data, 0, data.Length);
 }
 ```
 
 **7. `BinaryReader` / `BinaryWriter` — чтение/запись примитивных типов**
 ```csharp
+// Запись бинарных данных
 using (var writer = new BinaryWriter(File.Open("data.bin", FileMode.Create))) {
     writer.Write(42);           // int
     writer.Write(3.14);         // double
+    writer.Write(true);         // bool
     writer.Write("Привет");     // string
 }
 
+// Чтение бинарных данных
 using (var reader = new BinaryReader(File.Open("data.bin", FileMode.Open))) {
-    int num = reader.ReadInt32();
-    double pi = reader.ReadDouble();
-    string text = reader.ReadString();
+    int num = reader.ReadInt32();       // 42
+    double pi = reader.ReadDouble();    // 3.14
+    bool flag = reader.ReadBoolean();   // true
+    string text = reader.ReadString();  // "Привет"
 }
 ```
 
@@ -3312,8 +3580,8 @@ using (var reader = new BinaryReader(File.Open("data.bin", FileMode.Open))) {
 | `FileInfo` | Множественные операции на одном файле, метаданные |
 | `Directory` | Простые операции с папками |
 | `DirectoryInfo` | Множественные операции с папками |
-| `StreamReader/Writer` | Построчное чтение/запись текста |
-| `FileStream` | Низкоуровневая работа с байтами |
+| `StreamReader/Writer` | Построчное чтение/запись текста, большие файлы |
+| `FileStream` | Низкоуровневая работа с байтами, бинарные файлы |
 | `BinaryReader/Writer` | Чтение/запись примитивных типов в бинарном формате |
 
 ### Практический пример: логирование в файл
@@ -3335,12 +3603,33 @@ class Logger {
         
         return File.ReadAllLines(_logFile).ToList();
     }
+    
+    public void ClearLogs() {
+        if (File.Exists(_logFile))
+            File.Delete(_logFile);
+    }
 }
+```
+
+### Важное правило: всегда используйте `using`
+
+`using` гарантирует, что файл будет закрыт даже при возникновении исключения:
+
+```csharp
+// ПРАВИЛЬНО:
+using (var reader = new StreamReader("data.txt")) {
+    string content = reader.ReadToEnd();
+}  // файл автоматически закроется здесь
+
+// НЕПРАВИЛЬНО (файл может остаться открытым при ошибке):
+var reader = new StreamReader("data.txt");
+string content = reader.ReadToEnd();
+reader.Close();  // если выше было исключение — эта строка не выполнится!
 ```
 
 ---
 
-## 32. Объясните механизм обработки исключительных ситуаций в C#. Как работает конструкция try-catch-finally и когда её следует применять?
+## 34. Объясните механизм обработки исключительных ситуаций в C#. Как работает конструкция try-catch-finally и когда её следует применять?
 
 **Исключение (exception)** — это объект, описывающий ошибку, возникшую во время выполнения программы. Механизм обработки исключений позволяет **перехватывать ошибки** и обрабатывать их, не прерывая работу программы.
 
@@ -3518,7 +3807,7 @@ public string ReadFile(string path) {
 
 ---
 
-## 33. Объясните, как работают операторы is и as для преобразования типов. В чём их отличие от явного приведения типов?
+## 35. Объясните, как работают операторы is и as для преобразования типов. В чём их отличие от явного приведения типов?
 
 В C# есть несколько способов преобразования типов: **явное приведение**, оператор **`is`** и оператор **`as`**. Каждый имеет свои особенности и сценарии использования.
 
@@ -3579,19 +3868,23 @@ if (obj is string str) {
 
 **Синтаксис:** `объект as Тип`
 
-Пытается привести объект к типу. Если **невозможно** — возвращает `null` (не выбрасывает исключение).
+Пытается привести объект к типу. Если **невозможно** — возвращает **`null`** (не выбрасывает исключение).
+
+**ВАЖНО:** `as` работает **только с ссылочными типами** (классы, интерфейсы, `string`) и `nullable` типами (`int?`). Для обычных типов-значений (`int`, `double`) использовать нельзя.
 
 ```csharp
 object obj = "Привет";
 
 string str = obj as string;  // str = "Привет"
 int? num = obj as int?;      // num = null (не исключение!)
+
+// НЕЛЬЗЯ:
+// int num2 = obj as int;  // ОШИБКА! as не работает с обычными int
 ```
 
 **Особенности:**
-- Работает **только с ссылочными типами** (классы, интерфейсы, `string`).
-- Не работает с типами-значениями (`int`, `double`), кроме `nullable` (`int?`).
-- Возвращает `null` при неудаче — нужно проверять результат.
+- Возвращает **`null`** при неудаче — нужно проверять результат.
+- Не выбрасывает исключение.
 
 ```csharp
 object obj = "Привет";
@@ -3613,7 +3906,7 @@ if (obj is string str2) {
 |----------|-------------|------------------------------|-------------------|
 | `(Тип)obj` | Исключение `InvalidCastException` | Да | Когда уверены в типе |
 | `obj is Тип` | Возвращает `false` | Да | Проверка типа |
-| `obj as Тип` | Возвращает `null` | Только `nullable` | Безопасное приведение |
+| `obj as Тип` | Возвращает **`null`** | Только `nullable` | Безопасное приведение |
 
 ### Практические примеры
 
@@ -3707,7 +4000,7 @@ if (obj is Student student) {
 
 ---
 
-## 34. Какими способами можно конвертировать значения в C#? В чём их отличие?
+## 36. Какими способами можно конвертировать значения в C#? В чём их отличие?
 
 В C# есть несколько способов преобразования значений из одного типа в другой. Каждый способ имеет свои особенности, преимущества и ограничения.
 
@@ -3907,7 +4200,7 @@ string str = num.ToString();
 
 ---
 
-## 35. Объясните, как выполняются асинхронные операции в C#. Как работают ключевые слова async и await?
+## 37. Объясните, как выполняются асинхронные операции в C#. Как работают ключевые слова async и await?
 
 **Асинхронное программирование** — это способ выполнения **длительных операций** (чтение файлов, запросы к БД, HTTP-запросы) **без блокировки** основного потока. Это критически важно для **отзывчивости UI** — интерфейс не "зависает" во время ожидания.
 
@@ -4070,7 +4363,7 @@ private async void btnParallel_Click(object sender, RoutedEventArgs e) {
 | `void` | **Только** для обработчиков событий (нельзя `await`) |
 
 ```csharp
-// Task — без返回值
+// Task — без возвращаемого значения
 async Task SaveDataAsync() {
     await File.WriteAllTextAsync("data.txt", content);
 }
@@ -4180,4 +4473,3 @@ private async void btnCalculate_Click(object sender, RoutedEventArgs e) {
     txtResult.Text = $"Результат: {result}";
 }
 ```
-
