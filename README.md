@@ -3164,3 +3164,1020 @@ class StudentsViewModel : INotifyPropertyChanged {
 **5.** Используй `StringFormat` для форматирования без конвертеров.
 
 ---
+## 31. Опишите основные способы работы с файлами в C#. Какие классы используются для чтения и записи данных?
+
+В C# работа с файлами осуществляется через классы из пространства имён `System.IO`. Существует два подхода: **статические классы** (для простых операций) и **экземплярные классы** (для сложных операций с одним файлом).
+
+### Статические классы (быстрые операции)
+
+**1. `File` — статический класс для работы с файлами**
+- Быстрые операции: создание, копирование, удаление, чтение/запись.
+- Не сохраняет состояние — каждый вызов открывает и закрывает файл.
+
+```csharp
+// Чтение всего файла в строку
+string content = File.ReadAllText("data.txt");
+
+// Запись строки в файл
+File.WriteAllText("output.txt", "Привет, мир!");
+
+// Чтение всех строк в массив
+string[] lines = File.ReadAllLines("data.txt");
+
+// Запись массива строк
+File.WriteAllLines("output.txt", new[] { "Строка 1", "Строка 2" });
+
+// Проверка существования файла
+bool exists = File.Exists("data.txt");
+
+// Копирование файла
+File.Copy("source.txt", "dest.txt");
+
+// Удаление файла
+File.Delete("temp.txt");
+```
+
+**Когда использовать:** для простых операций, когда нужно прочитать/записать файл один раз.
+
+**2. `Directory` — статический класс для работы с папками**
+```csharp
+// Создание папки
+Directory.CreateDirectory("MyFolder");
+
+// Проверка существования
+bool exists = Directory.Exists("MyFolder");
+
+// Получение списка файлов
+string[] files = Directory.GetFiles("MyFolder");
+
+// Получение списка подпапок
+string[] dirs = Directory.GetDirectories("MyFolder");
+
+// Удаление папки
+Directory.Delete("MyFolder", recursive: true);
+```
+
+### Экземплярные классы (сложные операции)
+
+**3. `FileInfo` — экземплярный класс для работы с файлами**
+- Сохраняет состояние файла (путь, размер, время создания).
+- Подходит для **множественных операций** на одном файле.
+
+```csharp
+var fileInfo = new FileInfo("data.txt");
+
+// Получение информации о файле
+Console.WriteLine($"Размер: {fileInfo.Length} байт");
+Console.WriteLine($"Создан: {fileInfo.CreationTime}");
+Console.WriteLine($"Существует: {fileInfo.Exists}");
+
+// Создание файла
+using (FileStream fs = fileInfo.Create()) {
+    // работа с файлом
+}
+
+// Копирование
+fileInfo.CopyTo("backup.txt");
+
+// Удаление
+fileInfo.Delete();
+```
+
+**Когда использовать:** когда нужно выполнить несколько операций на одном файле или получить метаданные.
+
+**4. `DirectoryInfo` — экземплярный класс для работы с папками**
+```csharp
+var dirInfo = new DirectoryInfo("MyFolder");
+Console.WriteLine($"Создана: {dirInfo.CreationTime}");
+
+FileInfo[] files = dirInfo.GetFiles("*.txt");  // все .txt файлы
+DirectoryInfo[] subDirs = dirInfo.GetDirectories();
+```
+
+### Классы для чтения и записи данных
+
+**5. `StreamReader` / `StreamWriter` — потоковое чтение/запись текста**
+- Читают/пишут **построчно** или посимвольно.
+- Экономят память при работе с большими файлами.
+
+```csharp
+// Чтение построчно
+using (var reader = new StreamReader("data.txt")) {
+    string line;
+    while ((line = reader.ReadLine()) != null) {
+        Console.WriteLine(line);
+    }
+}
+
+// Запись построчно
+using (var writer = new StreamWriter("output.txt")) {
+    writer.WriteLine("Строка 1");
+    writer.WriteLine("Строка 2");
+}
+```
+
+**Когда использовать:** для больших файлов, когда не нужно загружать всё содержимое в память.
+
+**6. `FileStream` — низкоуровневая работа с файлами**
+- Работает с **байтами**, а не с текстом.
+- Подходит для бинарных файлов (изображения, видео).
+
+```csharp
+using (var fs = new FileStream("data.bin", FileMode.Open)) {
+    byte[] buffer = new byte[fs.Length];
+    fs.Read(buffer, 0, buffer.Length);
+}
+```
+
+**7. `BinaryReader` / `BinaryWriter` — чтение/запись примитивных типов**
+```csharp
+using (var writer = new BinaryWriter(File.Open("data.bin", FileMode.Create))) {
+    writer.Write(42);           // int
+    writer.Write(3.14);         // double
+    writer.Write("Привет");     // string
+}
+
+using (var reader = new BinaryReader(File.Open("data.bin", FileMode.Open))) {
+    int num = reader.ReadInt32();
+    double pi = reader.ReadDouble();
+    string text = reader.ReadString();
+}
+```
+
+### Сводная таблица выбора
+
+| Класс | Когда использовать |
+|-------|-------------------|
+| `File` | Простые операции (чтение/запись всего файла) |
+| `FileInfo` | Множественные операции на одном файле, метаданные |
+| `Directory` | Простые операции с папками |
+| `DirectoryInfo` | Множественные операции с папками |
+| `StreamReader/Writer` | Построчное чтение/запись текста |
+| `FileStream` | Низкоуровневая работа с байтами |
+| `BinaryReader/Writer` | Чтение/запись примитивных типов в бинарном формате |
+
+### Практический пример: логирование в файл
+
+```csharp
+class Logger {
+    private readonly string _logFile = "app.log";
+    
+    public void Log(string message) {
+        // Добавляем строку в конец файла
+        using (var writer = new StreamWriter(_logFile, append: true)) {
+            writer.WriteLine($"[{DateTime.Now:HH:mm:ss}] {message}");
+        }
+    }
+    
+    public List<string> ReadLogs() {
+        if (!File.Exists(_logFile))
+            return new List<string>();
+        
+        return File.ReadAllLines(_logFile).ToList();
+    }
+}
+```
+
+---
+
+## 32. Объясните механизм обработки исключительных ситуаций в C#. Как работает конструкция try-catch-finally и когда её следует применять?
+
+**Исключение (exception)** — это объект, описывающий ошибку, возникшую во время выполнения программы. Механизм обработки исключений позволяет **перехватывать ошибки** и обрабатывать их, не прерывая работу программы.
+
+### Конструкция `try-catch-finally`
+
+```csharp
+try {
+    // Код, который может вызвать исключение
+    int result = 10 / 0;  // DivideByZeroException
+}
+catch (DivideByZeroException ex) {
+    // Обработка конкретного исключения
+    Console.WriteLine($"Ошибка: деление на ноль! {ex.Message}");
+}
+catch (Exception ex) {
+    // Обработка всех остальных исключений
+    Console.WriteLine($"Неизвестная ошибка: {ex.Message}");
+}
+finally {
+    // Код, который выполнится ВСЕГДА (даже если было исключение)
+    Console.WriteLine("Завершение операции");
+}
+```
+
+### Компоненты конструкции
+
+**1. `try` — блок с кодом, который может вызвать ошибку**
+- Если возникает исключение — выполнение прерывается и передаётся в `catch`.
+- Если исключений нет — `catch` пропускается.
+
+**2. `catch` — блок обработки исключения**
+- Можно указать **несколько catch** для разных типов исключений.
+- Обрабатываются **сверху вниз** — сначала конкретные, потом общие.
+- Параметр `ex` содержит информацию об ошибке (сообщение, стек вызовов).
+
+```csharp
+try {
+    int[] arr = { 1, 2, 3 };
+    Console.WriteLine(arr[10]);  // IndexOutOfRangeException
+}
+catch (IndexOutOfRangeException ex) {
+    Console.WriteLine("Индекс вне диапазона!");
+}
+catch (NullReferenceException ex) {
+    Console.WriteLine("Объект не создан!");
+}
+catch (Exception ex) {
+    Console.WriteLine($"Другая ошибка: {ex.Message}");
+}
+```
+
+**3. `finally` — блок, который выполняется ВСЕГДА**
+- Выполняется **независимо** от того, было ли исключение.
+- Используется для **освобождения ресурсов** (закрытие файлов, соединений с БД).
+- Можно опустить, если не нужно освобождать ресурсы.
+
+```csharp
+FileStream fs = null;
+try {
+    fs = new FileStream("data.txt", FileMode.Open);
+    // работа с файлом
+}
+catch (Exception ex) {
+    Console.WriteLine($"Ошибка: {ex.Message}");
+}
+finally {
+    fs?.Close();  // закроем файл в любом случае
+}
+```
+
+### Упрощение с `using` (для `IDisposable`)
+
+Для объектов, реализующих `IDisposable` (файлы, соединения с БД), используйте `using` — он автоматически вызывает `Dispose()` (аналог `finally`):
+
+```csharp
+// Вместо try-finally:
+using (var fs = new FileStream("data.txt", FileMode.Open)) {
+    // работа с файлом
+}  // fs.Dispose() вызовется автоматически, даже если было исключение
+```
+
+### Типичные исключения
+
+| Исключение | Когда возникает |
+|------------|-----------------|
+| `NullReferenceException` | Обращение к `null`-объекту |
+| `IndexOutOfRangeException` | Индекс массива вне диапазона |
+| `DivideByZeroException` | Деление на ноль |
+| `FormatException` | Неверный формат данных (например, `int.Parse("abc")`) |
+| `FileNotFoundException` | Файл не найден |
+| `UnauthorizedAccessException` | Нет прав доступа |
+| `ArgumentException` | Неверный аргумент метода |
+
+### Генерация собственных исключений
+
+Используйте `throw` для создания исключений:
+
+```csharp
+public void SetAge(int age) {
+    if (age < 0 || age > 150) {
+        throw new ArgumentException("Некорректный возраст");
+    }
+    _age = age;
+}
+
+// Вызов:
+try {
+    SetAge(-5);
+}
+catch (ArgumentException ex) {
+    Console.WriteLine(ex.Message);
+}
+```
+
+### Создание собственных классов исключений
+
+```csharp
+class InsufficientFundsException : Exception {
+    public decimal Balance { get; }
+    public decimal Amount { get; }
+    
+    public InsufficientFundsException(decimal balance, decimal amount)
+        : base($"Недостаточно средств: баланс {balance}, требуется {amount}") {
+        Balance = balance;
+        Amount = amount;
+    }
+}
+
+// Использование:
+public void Withdraw(decimal amount) {
+    if (amount > _balance) {
+        throw new InsufficientFundsException(_balance, amount);
+    }
+    _balance -= amount;
+}
+```
+
+### Когда применять `try-catch`
+
+**Применяйте, когда:**
+- Работаете с внешними ресурсами (файлы, БД, сеть).
+- Ожидаете ошибки от пользователя (неверный ввод).
+- Можете **осмысленно обработать** ошибку (показать сообщение, повторить операцию).
+
+**Не применяйте, когда:**
+- Ошибку можно предотвратить проверкой (`if (file.Exists)` вместо `try-catch`).
+- Не знаете, как обработать ошибку — пусть она всплывёт выше.
+- Используете `try-catch` для управления потоком программы (это плохая практика).
+
+### Практический пример: безопасное чтение файла
+
+```csharp
+public string ReadFile(string path) {
+    try {
+        if (!File.Exists(path)) {
+            throw new FileNotFoundException("Файл не найден", path);
+        }
+        
+        return File.ReadAllText(path);
+    }
+    catch (FileNotFoundException ex) {
+        Console.WriteLine($"Файл не найден: {ex.FileName}");
+        return string.Empty;
+    }
+    catch (UnauthorizedAccessException ex) {
+        Console.WriteLine("Нет прав доступа к файлу");
+        return string.Empty;
+    }
+    catch (Exception ex) {
+        Console.WriteLine($"Неизвестная ошибка: {ex.Message}");
+        throw;  // пробрасываем исключение дальше
+    }
+}
+```
+
+---
+
+## 33. Объясните, как работают операторы is и as для преобразования типов. В чём их отличие от явного приведения типов?
+
+В C# есть несколько способов преобразования типов: **явное приведение**, оператор **`is`** и оператор **`as`**. Каждый имеет свои особенности и сценарии использования.
+
+### Явное приведение типов
+
+**Синтаксис:** `(Тип)объект`
+
+```csharp
+object obj = "Привет";
+string str = (string)obj;  // явное приведение
+```
+
+**Особенности:**
+- Если преобразование **невозможно** — выбрасывается `InvalidCastException`.
+- Работает как с ссылочными, так и с типами-значениями.
+
+```csharp
+object obj = 42;  // int упакован в object
+int num = (int)obj;  // OK
+
+object obj2 = "Привет";
+int num2 = (int)obj2;  // InvalidCastException!
+```
+
+### Оператор `is` — проверка типа
+
+**Синтаксис:** `объект is Тип`
+
+Возвращает `true`, если объект **можно преобразовать** к указанному типу без исключения.
+
+```csharp
+object obj = "Привет";
+
+if (obj is string) {
+    Console.WriteLine("Это строка!");
+}
+
+if (obj is int) {
+    Console.WriteLine("Это число!");  // не выполнится
+}
+```
+
+**Использование с паттерн-матчингом (C# 7+):**
+```csharp
+object obj = "Привет";
+
+if (obj is string str) {
+    // str уже приведена к string и доступна здесь
+    Console.WriteLine($"Длина строки: {str.Length}");
+}
+```
+
+**Когда использовать:**
+- Проверить тип перед приведением.
+- Условная логика в зависимости от типа.
+
+### Оператор `as` — безопасное приведение
+
+**Синтаксис:** `объект as Тип`
+
+Пытается привести объект к типу. Если **невозможно** — возвращает `null` (не выбрасывает исключение).
+
+```csharp
+object obj = "Привет";
+
+string str = obj as string;  // str = "Привет"
+int? num = obj as int?;      // num = null (не исключение!)
+```
+
+**Особенности:**
+- Работает **только с ссылочными типами** (классы, интерфейсы, `string`).
+- Не работает с типами-значениями (`int`, `double`), кроме `nullable` (`int?`).
+- Возвращает `null` при неудаче — нужно проверять результат.
+
+```csharp
+object obj = "Привет";
+
+string str = obj as string;
+if (str != null) {
+    Console.WriteLine($"Длина: {str.Length}");
+}
+
+// Или короче с C# 7+:
+if (obj is string str2) {
+    Console.WriteLine($"Длина: {str2.Length}");
+}
+```
+
+### Сравнительная таблица
+
+| Оператор | При неудаче | Работает с типами-значениями | Когда использовать |
+|----------|-------------|------------------------------|-------------------|
+| `(Тип)obj` | Исключение `InvalidCastException` | Да | Когда уверены в типе |
+| `obj is Тип` | Возвращает `false` | Да | Проверка типа |
+| `obj as Тип` | Возвращает `null` | Только `nullable` | Безопасное приведение |
+
+### Практические примеры
+
+**Пример 1: Обработка коллекции разнотипных объектов**
+```csharp
+object[] objects = { "Привет", 42, 3.14, true };
+
+foreach (object obj in objects) {
+    if (obj is string str) {
+        Console.WriteLine($"Строка: {str}");
+    }
+    else if (obj is int num) {
+        Console.WriteLine($"Число: {num}");
+    }
+    else if (obj is double d) {
+        Console.WriteLine($"Дробное: {d}");
+    }
+}
+```
+
+**Пример 2: Безопасное приведение в методе**
+```csharp
+public void ProcessData(object data) {
+    // Вариант 1: as + проверка на null
+    Student student = data as Student;
+    if (student != null) {
+        Console.WriteLine($"Студент: {student.Name}");
+    }
+    
+    // Вариант 2: is с паттерн-матчингом (предпочтительнее)
+    if (data is Student student2) {
+        Console.WriteLine($"Студент: {student2.Name}");
+    }
+}
+```
+
+**Пример 3: Перегрузка методов с разными типами**
+```csharp
+public void Print(object obj) {
+    switch (obj) {
+        case string str:
+            Console.WriteLine($"Строка: {str}");
+            break;
+        case int num:
+            Console.WriteLine($"Число: {num}");
+            break;
+        case Student student:
+            Console.WriteLine($"Студент: {student.Name}");
+            break;
+        default:
+            Console.WriteLine("Неизвестный тип");
+            break;
+    }
+}
+```
+
+### Когда что использовать
+
+**Явное приведение `(Тип)obj`:**
+- Когда **уверены** в типе объекта.
+- Когда работаете с типами-значениями.
+- Когда хотите получить исключение при неверном типе.
+
+**Оператор `is`:**
+- Для **проверки типа** перед приведением.
+- Для условной логики в зависимости от типа.
+- С паттерн-матчингом (C# 7+) — самый удобный способ.
+
+**Оператор `as`:**
+- Для **безопасного приведения** ссылочных типов.
+- Когда `null` — допустимый результат.
+- Когда не хотите обрабатывать исключения.
+
+### Современный подход (C# 7+)
+
+Используйте **паттерн-матчинг** с `is` — это самый читаемый и безопасный способ:
+
+```csharp
+// Вместо:
+Student student = obj as Student;
+if (student != null) {
+    // работа с student
+}
+
+// Используйте:
+if (obj is Student student) {
+    // student уже приведена и доступна
+    Console.WriteLine(student.Name);
+}
+```
+
+---
+
+## 34. Какими способами можно конвертировать значения в C#? В чём их отличие?
+
+В C# есть несколько способов преобразования значений из одного типа в другой. Каждый способ имеет свои особенности, преимущества и ограничения.
+
+### 1. Явное приведение типов (Casting)
+
+**Синтаксис:** `(Тип)значение`
+
+```csharp
+double d = 3.14;
+int i = (int)d;  // i = 3 (дробная часть отбрасывается)
+
+long bigNum = 1000000;
+int smallNum = (int)bigNum;  // OK, если значение помещается
+```
+
+**Особенности:**
+- **Отбрасывает** дробную часть (не округляет).
+- Может привести к **переполнению** при выходе за диапазон типа.
+- Работает только с **совместимыми типами** (числовые типы).
+
+```csharp
+double d = 3.99;
+int i = (int)d;  // i = 3 (не 4!)
+
+long big = 3_000_000_000;
+int small = (int)big;  // переполнение! small = -1294967296
+```
+
+### 2. Метод `Parse()` — парсинг строки
+
+**Синтаксис:** `Тип.Parse(строка)`
+
+```csharp
+string str = "42";
+int num = int.Parse(str);  // num = 42
+
+string pi = "3.14";
+double d = double.Parse(pi);  // d = 3.14
+```
+
+**Особенности:**
+- Работает **только со строками**.
+- При неверном формате выбрасывает **`FormatException`**.
+- При `null` выбрасывает **`ArgumentNullException`**.
+
+```csharp
+int num1 = int.Parse("42");       // OK
+int num2 = int.Parse("abc");      // FormatException!
+int num3 = int.Parse(null);       // ArgumentNullException!
+int num4 = int.Parse("99999999999999999999");  // OverflowException!
+```
+
+### 3. Метод `TryParse()` — безопасный парсинг
+
+**Синтаксис:** `Тип.TryParse(строка, out переменная)`
+
+Возвращает `true`, если парсинг успешен, иначе `false`. Результат записывается в `out`-параметр.
+
+```csharp
+string str = "42";
+if (int.TryParse(str, out int num)) {
+    Console.WriteLine($"Число: {num}");  // Число: 42
+}
+else {
+    Console.WriteLine("Неверный формат");
+}
+
+// Пример с неверным вводом:
+if (int.TryParse("abc", out int num2)) {
+    Console.WriteLine(num2);  // не выполнится
+}
+else {
+    Console.WriteLine("Ошибка парсинга");  // выполнится
+}
+```
+
+**Особенности:**
+- **Не выбрасывает исключений** — возвращает `bool`.
+- При неудаче `out`-параметр получает **значение по умолчанию** (0 для `int`).
+- **Самый безопасный** способ парсинга пользовательского ввода.
+
+### 4. Класс `Convert` — универсальное преобразование
+
+**Синтаксис:** `Convert.ToТип(значение)`
+
+```csharp
+int num = Convert.ToInt32("42");
+double d = Convert.ToDouble("3.14");
+bool b = Convert.ToBoolean(1);  // true
+string str = Convert.ToString(42);
+```
+
+**Особенности:**
+- Работает с **разными типами** (не только строки).
+- При `null` возвращает **значение по умолчанию** (0 для чисел).
+- **Округляет** дробные числа (в отличие от явного приведения).
+- Может выбрасывать `FormatException` или `InvalidCastException`.
+
+```csharp
+// Округление:
+int i1 = (int)3.99;           // i1 = 3 (отбрасывание)
+int i2 = Convert.ToInt32(3.99);  // i2 = 4 (округление!)
+
+// null:
+int i3 = Convert.ToInt32(null);  // i3 = 0 (не исключение!)
+int i4 = int.Parse(null);        // ArgumentNullException!
+```
+
+### 5. Метод `ToString()` — преобразование в строку
+
+```csharp
+int num = 42;
+string str = num.ToString();  // "42"
+
+double d = 3.14;
+string str2 = d.ToString();  // "3.14"
+
+// С форматированием:
+string price = 99.99.ToString("0.00 руб.");  // "99.99 руб."
+string date = DateTime.Now.ToString("dd.MM.yyyy");  // "24.06.2026"
+```
+
+### Сводная таблица
+
+| Способ | Работает с | При неудаче | Округление | Когда использовать |
+|--------|------------|-------------|------------|-------------------|
+| `(Тип)` | Совместимые типы | Переполнение | Отбрасывает | Когда уверены в значении |
+| `Parse()` | Строки | Исключение | — | Когда уверены в формате |
+| `TryParse()` | Строки | Возвращает `false` | — | **Пользовательский ввод** |
+| `Convert` | Разные типы | Исключение | Округляет | Универсальное преобразование |
+| `ToString()` | Любой тип | — | — | Преобразование в строку |
+
+### Практические примеры
+
+**Пример 1: Безопасный ввод числа от пользователя**
+```csharp
+Console.Write("Введите возраст: ");
+string input = Console.ReadLine();
+
+if (int.TryParse(input, out int age)) {
+    Console.WriteLine($"Возраст: {age}");
+}
+else {
+    Console.WriteLine("Неверный формат числа!");
+}
+```
+
+**Пример 2: Парсинг с учётом культуры (разделители)**
+```csharp
+string str = "3,14";  // запятая как разделитель (русская культура)
+
+// Без указания культуры — может не распарситься
+double d1 = double.Parse(str);  // зависит от настроек системы
+
+// С явным указанием культуры:
+double d2 = double.Parse(str, CultureInfo.GetCultureInfo("ru-RU"));  // 3.14
+double d3 = double.Parse("3.14", CultureInfo.InvariantCulture);      // 3.14
+```
+
+**Пример 3: Преобразование enum в строку и обратно**
+```csharp
+enum Color { Red, Green, Blue }
+
+// Enum → String
+Color color = Color.Red;
+string str = color.ToString();  // "Red"
+
+// String → Enum
+Color color2 = (Color)Enum.Parse(typeof(Color), "Green");
+// или безопаснее:
+if (Enum.TryParse("Blue", out Color color3)) {
+    Console.WriteLine(color3);  // Blue
+}
+```
+
+### Рекомендации
+
+**1. Для пользовательского ввода** — всегда используйте `TryParse()`:
+```csharp
+if (int.TryParse(input, out int result)) {
+    // работаем с result
+}
+```
+
+**2. Для преобразования чисел** — используйте явное приведение или `Convert`:
+```csharp
+int i = (int)3.14;           // отбрасывание
+int i2 = Convert.ToInt32(3.14);  // округление
+```
+
+**3. Для преобразования в строку** — используйте `ToString()`:
+```csharp
+string str = num.ToString();
+```
+
+**4. Избегайте `Parse()`** — он выбрасывает исключения, используйте `TryParse()`.
+
+---
+
+## 35. Объясните, как выполняются асинхронные операции в C#. Как работают ключевые слова async и await?
+
+**Асинхронное программирование** — это способ выполнения **длительных операций** (чтение файлов, запросы к БД, HTTP-запросы) **без блокировки** основного потока. Это критически важно для **отзывчивости UI** — интерфейс не "зависает" во время ожидания.
+
+### Проблема синхронного кода
+
+```csharp
+// ПЛОХО: блокирует UI на 5 секунд
+private void Button_Click(object sender, RoutedEventArgs e) {
+    Thread.Sleep(5000);  // имитация долгой операции
+    MessageBox.Show("Готово!");  // UI заморожен все 5 секунд
+}
+```
+
+**Результат:** окно не отвечает, нельзя нажать другие кнопки, переместить окно.
+
+### Решение: `async` и `await`
+
+```csharp
+// ХОРОШО: UI не блокируется
+private async void Button_Click(object sender, RoutedEventArgs e) {
+    await Task.Delay(5000);  // асинхронное ожидание
+    MessageBox.Show("Готово!");  // UI работал все 5 секунд
+}
+```
+
+**Результат:** окно остаётся отзывчивым, можно нажимать другие кнопки.
+
+### Как работают `async` и `await`
+
+**1. `async` — модификатор метода**
+- Указывает, что метод содержит асинхронные операции.
+- Метод должен возвращать `Task` или `Task<T>` (или `void` для обработчиков событий).
+
+```csharp
+async Task DoWorkAsync() { }           // без возвращаемого значения
+async Task<int> CalculateAsync() { }   // с возвращаемым значением
+async void Button_Click(...) { }       // только для обработчиков событий!
+```
+
+**2. `await` — ожидание асинхронной операции**
+- Приостанавливает выполнение метода **до завершения** операции.
+- **Не блокирует поток** — поток освобождается для других задач.
+- Можно использовать **только внутри `async`-метода**.
+
+```csharp
+async Task<string> DownloadDataAsync() {
+    // Поток освобождается, пока идёт загрузка
+    string data = await httpClient.GetStringAsync(url);
+    
+    // Выполнение продолжается после завершения загрузки
+    return data;
+}
+```
+
+### Как это работает под капотом
+
+**Без `async/await` (синхронно):**
+```
+Поток UI: [Клик] → [Ожидание 5 сек] → [Показать результат]
+                ↑___________________↑
+                UI заморожен!
+```
+
+**С `async/await` (асинхронно):**
+```
+Поток UI: [Клик] → [Запуск задачи] → [Свободен для других дел] → [Продолжение]
+                    ↓
+Поток пула:         [Выполнение задачи 5 сек] → [Сигнал о завершении]
+```
+
+### Практические примеры
+
+**Пример 1: Загрузка данных из файла**
+```csharp
+private async void btnLoad_Click(object sender, RoutedEventArgs e) {
+    btnLoad.IsEnabled = false;  // блокируем кнопку
+    txtStatus.Text = "Загрузка...";
+    
+    try {
+        // Асинхронное чтение файла
+        string content = await File.ReadAllTextAsync("data.txt");
+        txtContent.Text = content;
+        txtStatus.Text = "Загружено!";
+    }
+    catch (Exception ex) {
+        MessageBox.Show($"Ошибка: {ex.Message}");
+    }
+    finally {
+        btnLoad.IsEnabled = true;  // разблокируем кнопку
+    }
+}
+```
+
+**Пример 2: Запрос к веб-API**
+```csharp
+private async Task<string> GetWeatherAsync(string city) {
+    using (var httpClient = new HttpClient()) {
+        string url = $"https://api.weather.com/{city}";
+        
+        // Асинхронный HTTP-запрос
+        string json = await httpClient.GetStringAsync(url);
+        
+        // Парсинг JSON (можно тоже асинхронно)
+        return json;
+    }
+}
+
+private async void btnWeather_Click(object sender, RoutedEventArgs e) {
+    txtStatus.Text = "Запрос погоды...";
+    
+    string weather = await GetWeatherAsync("Moscow");
+    txtResult.Text = weather;
+}
+```
+
+**Пример 3: Асинхронная работа с БД**
+```csharp
+private async Task<List<Student>> GetStudentsAsync() {
+    using (var conn = new SqlConnection(connStr)) {
+        await conn.OpenAsync();  // асинхронное открытие соединения
+        
+        var cmd = new SqlCommand("SELECT * FROM Students", conn);
+        using (var reader = await cmd.ExecuteReaderAsync()) {
+            var students = new List<Student>();
+            while (await reader.ReadAsync()) {
+                students.Add(new Student {
+                    Name = reader["Name"].ToString(),
+                    Age = (int)reader["Age"]
+                });
+            }
+            return students;
+        }
+    }
+}
+```
+
+**Пример 4: Параллельное выполнение задач**
+```csharp
+private async void btnParallel_Click(object sender, RoutedEventArgs e) {
+    txtStatus.Text = "Загрузка...";
+    
+    // Запускаем несколько задач параллельно
+    Task<string> task1 = DownloadFileAsync("file1.txt");
+    Task<string> task2 = DownloadFileAsync("file2.txt");
+    Task<string> task3 = DownloadFileAsync("file3.txt");
+    
+    // Ждём завершения всех задач
+    string[] results = await Task.WhenAll(task1, task2, task3);
+    
+    txtResult.Text = $"Загружено {results.Length} файлов";
+}
+```
+
+### Возвращаемые типы асинхронных методов
+
+| Тип | Когда использовать |
+|-----|-------------------|
+| `Task` | Метод не возвращает значение |
+| `Task<T>` | Метод возвращает значение типа `T` |
+| `void` | **Только** для обработчиков событий (нельзя `await`) |
+
+```csharp
+// Task — без返回值
+async Task SaveDataAsync() {
+    await File.WriteAllTextAsync("data.txt", content);
+}
+
+// Task<T> — с возвращаемым значением
+async Task<int> CalculateSumAsync() {
+    await Task.Delay(1000);
+    return 42;
+}
+
+// void — только для обработчиков событий
+async void Button_Click(object sender, RoutedEventArgs e) {
+    await DoWorkAsync();
+}
+```
+
+### Обработка исключений в асинхронном коде
+
+```csharp
+private async void Button_Click(object sender, RoutedEventArgs e) {
+    try {
+        string data = await DownloadDataAsync();
+        ProcessData(data);
+    }
+    catch (HttpRequestException ex) {
+        MessageBox.Show($"Ошибка сети: {ex.Message}");
+    }
+    catch (Exception ex) {
+        MessageBox.Show($"Ошибка: {ex.Message}");
+    }
+}
+```
+
+### Распространённые ошибки
+
+**Ошибка 1: Забыли `await`**
+```csharp
+// ПЛОХО: задача запущена, но не ожидается
+private async void Button_Click(object sender, RoutedEventArgs e) {
+    DownloadDataAsync();  // забыли await!
+    MessageBox.Show("Готово");  // покажется сразу, до завершения загрузки
+}
+
+// ХОРОШО:
+private async void Button_Click(object sender, RoutedEventArgs e) {
+    await DownloadDataAsync();  // ждём завершения
+    MessageBox.Show("Готово");
+}
+```
+
+**Ошибка 2: `async void` вместо `async Task`**
+```csharp
+// ПЛОХО: нельзя поймать исключение, нельзя дождаться
+async void DoWork() {
+    await Task.Delay(1000);
+    throw new Exception();  // исключение потеряется!
+}
+
+// ХОРОШО:
+async Task DoWorkAsync() {
+    await Task.Delay(1000);
+    throw new Exception();  // исключение можно поймать
+}
+```
+
+**Ошибка 3: Блокировка потока через `.Result` или `.Wait()`**
+```csharp
+// ПЛОХО: блокирует поток, может привести к deadlock
+private void Button_Click(object sender, RoutedEventArgs e) {
+    string data = DownloadDataAsync().Result;  // блокировка!
+}
+
+// ХОРОШО: используйте await
+private async void Button_Click(object sender, RoutedEventArgs e) {
+    string data = await DownloadDataAsync();
+}
+```
+
+### Когда использовать `async/await`
+
+**Используйте, когда:**
+- Работаете с **I/O-операциями** (файлы, сеть, БД).
+- Нужна **отзывчивость UI** (WPF, WinForms).
+- Выполняете **долгие вычисления** в фоновом потоке.
+
+**Не используйте, когда:**
+- Операция выполняется **мгновенно** (нет смысла в асинхронности).
+- Работаете с **CPU-bound** задачами (используйте `Task.Run`).
+
+### `Task.Run` для CPU-bound задач
+
+```csharp
+// CPU-bound задача — долгие вычисления
+private async void btnCalculate_Click(object sender, RoutedEventArgs e) {
+    txtStatus.Text = "Вычисление...";
+    
+    // Запускаем вычисления в фоновом потоке
+    int result = await Task.Run(() => {
+        // Долгие вычисления (например, обработка изображения)
+        int sum = 0;
+        for (int i = 0; i < 100_000_000; i++) {
+            sum += i;
+        }
+        return sum;
+    });
+    
+    txtResult.Text = $"Результат: {result}";
+}
+```
+
